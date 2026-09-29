@@ -1,5 +1,15 @@
 // -*- mode: c++ -*-
 
+// ---------------------------------------------------------------------------
+// Fichero:     EmisoraBLE.h
+// Descripción: Emisora Bluetooth Low Energy: anuncios iBeacon y servicios.
+//              Diseño en doc/arduino_design.md.
+// Autor:       Jordi Bataller i Mascarell (código original proporcionado)
+// Aportación:  Pelin Kaynak - cabeceras de fichero y de función con el
+//              diseño lógico (29/09/2026)
+// Copyright:   (c) Jordi Bataller i Mascarell - EPSG-UPV
+// ---------------------------------------------------------------------------
+
 // ----------------------------------------------------------
 // Jordi Bataller i Mascarell
 // 2019-07-07
@@ -36,8 +46,9 @@ public:
   using CallbackConexionEstablecida = void ( uint16_t connHandle );
   using CallbackConexionTerminada = void ( uint16_t connHandle, uint8_t reason);
 
-  // .........................................................
-  // .........................................................
+  // ------------------------------------------------------------
+  // nombreEmisora: Text, fabricanteID: N, txPower: Z --> EmisoraBLE() -->
+  // ------------------------------------------------------------
   EmisoraBLE( const char * nombreEmisora_, const uint16_t fabricanteID_,
 			  const int8_t txPower_ ) 
 	:
@@ -70,8 +81,9 @@ public:
   } // ()
   */
 	
-  // .........................................................
-  // .........................................................
+  // ------------------------------------------------------------
+  // encenderEmisora() -->
+  // ------------------------------------------------------------
   void encenderEmisora() {
 	// Serial.println ( "Bluefruit.begin() " );
 	 Bluefruit.begin(); 
@@ -80,8 +92,9 @@ public:
 	 (*this).detenerAnuncio();
   } // ()
 
-  // .........................................................
-  // .........................................................
+  // ------------------------------------------------------------
+  // encenderEmisora() -->   (versión que también instala los callbacks de conexión)
+  // ------------------------------------------------------------
   void encenderEmisora( CallbackConexionEstablecida cbce,
 						CallbackConexionTerminada cbct ) {
 
@@ -92,8 +105,9 @@ public:
 
   } // ()
 
-  // .........................................................
-  // .........................................................
+  // ------------------------------------------------------------
+  // detenerAnuncio() -->
+  // ------------------------------------------------------------
   void detenerAnuncio() {
 
 	if ( (*this).estaAnunciando() ) {
@@ -105,13 +119,16 @@ public:
   
   // .........................................................
   // estaAnunciando() -> Boleano
-  // .........................................................
+  // ------------------------------------------------------------
+  // estaAnunciando() --> B
+  // ------------------------------------------------------------
   bool estaAnunciando() {
 	return Bluefruit.Advertising.isRunning();
   } // ()
 
-  // .........................................................
-  // .........................................................
+  // ------------------------------------------------------------
+  // beaconUUID: [N]_16, major: Z, minor: Z, rssi: N --> emitirAnuncioIBeacon() -->
+  // ------------------------------------------------------------
   void emitirAnuncioIBeacon( uint8_t * beaconUUID, int16_t major, int16_t minor, uint8_t rssi ) {
 
 	//
@@ -200,6 +217,9 @@ public:
 
 	const uint8_t tamanyoCarga = strlen( carga );
   */
+  // ------------------------------------------------------------
+  // carga: Text, tamanyoCarga: N --> emitirAnuncioIBeaconLibre() -->
+  // ------------------------------------------------------------
   void emitirAnuncioIBeaconLibre( const char * carga, const uint8_t tamanyoCarga ) {
 
 	(*this).detenerAnuncio(); 
@@ -260,8 +280,9 @@ public:
 	Globales::elPuerto.escribir( "emitiriBeacon libre  Bluefruit.Advertising.start( 0 );  \n");
   } // ()
 
-  // .........................................................
-  // .........................................................
+  // ------------------------------------------------------------
+  // servicio: ServicioEnEmisora --> anyadirServicio() --> B
+  // ------------------------------------------------------------
   bool anyadirServicio( ServicioEnEmisora & servicio ) {
 
 	Globales::elPuerto.escribir( " Bluefruit.Advertising.addService( servicio ); \n");
@@ -279,13 +300,17 @@ public:
   } // ()
 
   
-  // .........................................................
-  // .........................................................
+  // ------------------------------------------------------------
+  // servicio: ServicioEnEmisora --> anyadirServicioConSusCaracteristicas() --> B
+  // ------------------------------------------------------------
   bool anyadirServicioConSusCaracteristicas( ServicioEnEmisora & servicio ) { 
 	return (*this).anyadirServicio( servicio );
   } // 
 
-  // .........................................................
+  // ------------------------------------------------------------
+  // servicio: ServicioEnEmisora, caracteristicas: [Caracteristica]
+  //     --> anyadirServicioConSusCaracteristicas() --> B
+  // ------------------------------------------------------------
   template <typename ... T>
   bool anyadirServicioConSusCaracteristicas( ServicioEnEmisora & servicio,
 											 ServicioEnEmisora::Caracteristica & caracteristica,
@@ -297,7 +322,10 @@ public:
 	
   } // ()
 
-  // .........................................................
+  // ------------------------------------------------------------
+  // servicio: ServicioEnEmisora, caracteristicas: [Caracteristica]
+  //     --> anyadirServicioConSusCaracteristicasYActivar() --> B
+  // ------------------------------------------------------------
   template <typename ... T>
   bool anyadirServicioConSusCaracteristicasYActivar( ServicioEnEmisora & servicio,
 													 // ServicioEnEmisora::Caracteristica & caracteristica,
@@ -311,20 +339,23 @@ public:
 	
   } // ()
 
-  // .........................................................
-  // .........................................................
+  // ------------------------------------------------------------
+  // instalarCallbackConexionEstablecida() -->   (el callback se omite en la notación)
+  // ------------------------------------------------------------
   void instalarCallbackConexionEstablecida( CallbackConexionEstablecida cb ) {
 	Bluefruit.Periph.setConnectCallback( cb );
   } // ()
 
-  // .........................................................
-  // .........................................................
+  // ------------------------------------------------------------
+  // instalarCallbackConexionTerminada() -->   (el callback se omite en la notación)
+  // ------------------------------------------------------------
   void instalarCallbackConexionTerminada( CallbackConexionTerminada cb ) {
 	Bluefruit.Periph.setDisconnectCallback( cb );
   } // ()
 
-  // .........................................................
-  // .........................................................
+  // ------------------------------------------------------------
+  // connHandle: N --> getConexion() --> BLEConnection
+  // ------------------------------------------------------------
   BLEConnection * getConexion( uint16_t connHandle ) {
 	return Bluefruit.Connection( connHandle );
   } // ()

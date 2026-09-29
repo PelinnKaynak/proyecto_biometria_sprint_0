@@ -1,5 +1,15 @@
 // -*- mode: c++ -*-
 
+// ---------------------------------------------------------------------------
+// Fichero:     Publicador.h
+// Descripción: Publica las mediciones en tramas iBeacon (major = tipo*256 + contador, minor = valor).
+//              Diseño en doc/arduino_design.md.
+// Autor:       Jordi Bataller i Mascarell (código original proporcionado)
+// Aportación:  Pelin Kaynak - cabeceras de fichero y de función con el
+//              diseño lógico (29/09/2026)
+// Copyright:   (c) Jordi Bataller i Mascarell - EPSG-UPV
+// ---------------------------------------------------------------------------
+
 // --------------------------------------------------------------
 // Jordi Bataller i Mascarell
 // --------------------------------------------------------------
@@ -44,21 +54,24 @@ public:
 	RUIDO = 13
   };
 
-  // ............................................................
-  // ............................................................
+  // ------------------------------------------------------------
+  // Publicador() -->
+  // ------------------------------------------------------------
   Publicador( ) {
 	// ATENCION: no hacerlo aquí. (*this).laEmisora.encenderEmisora();
 	// Pondremos un método para llamarlo desde el setup() más tarde
   } // ()
 
-  // ............................................................
-  // ............................................................
+  // ------------------------------------------------------------
+  // encenderEmisora() -->
+  // ------------------------------------------------------------
   void encenderEmisora() {
 	(*this).laEmisora.encenderEmisora();
   } // ()
 
-  // ............................................................
-  // ............................................................
+  // ------------------------------------------------------------
+  // valorCO2: Z, contador: N, tiempoEspera: Z --> publicarCO2() -->
+  // ------------------------------------------------------------
   void publicarCO2( int16_t valorCO2, uint8_t contador,
 					long tiempoEspera ) {
 
@@ -93,8 +106,9 @@ public:
 	(*this).laEmisora.detenerAnuncio();
   } // ()
 
-  // ............................................................
-  // ............................................................
+  // ------------------------------------------------------------
+  // valorTemperatura: Z, contador: N, tiempoEspera: Z --> publicarTemperatura() -->
+  // ------------------------------------------------------------
   void publicarTemperatura( int16_t valorTemperatura,
 							uint8_t contador, long tiempoEspera ) {
 

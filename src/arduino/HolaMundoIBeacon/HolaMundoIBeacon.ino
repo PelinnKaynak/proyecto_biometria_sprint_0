@@ -1,5 +1,15 @@
 // -*-c++-*-
 
+// ---------------------------------------------------------------------------
+// Fichero:     HolaMundoIBeacon.ino
+// Descripción: Programa principal de la placa: mide (valor ficticio) y publica la medición en tramas iBeacon.
+//              Diseño en doc/arduino_design.md.
+// Autor:       Jordi Bataller i Mascarell (código original proporcionado)
+// Aportación:  Pelin Kaynak - cabeceras de fichero y de función con el
+//              diseño lógico (29/09/2026)
+// Copyright:   (c) Jordi Bataller i Mascarell - EPSG-UPV
+// ---------------------------------------------------------------------------
+
 // --------------------------------------------------------------
 //
 // Jordi Bataller i Mascarell
@@ -51,8 +61,9 @@ namespace Globales {
 
 }; // namespace
 
-// --------------------------------------------------------------
-// --------------------------------------------------------------
+// ------------------------------------------------------------
+// inicializarPlaquita() -->
+// ------------------------------------------------------------
 void inicializarPlaquita () {
 
   // de momento nada
@@ -61,7 +72,9 @@ void inicializarPlaquita () {
 
 // --------------------------------------------------------------
 // setup()
-// --------------------------------------------------------------
+// ------------------------------------------------------------
+// setup() -->   (espera el puerto serie, enciende la emisora e inicia el medidor)
+// ------------------------------------------------------------
 void setup() {
 
   Globales::elPuerto.esperarDisponible();
@@ -95,8 +108,9 @@ void setup() {
 
 } // setup ()
 
-// --------------------------------------------------------------
-// --------------------------------------------------------------
+// ------------------------------------------------------------
+// lucecitas() -->   (secuencia de parpadeos del LED)
+// ------------------------------------------------------------
 inline void lucecitas() {
   using namespace Globales;
 
@@ -117,8 +131,9 @@ namespace Loop {
   uint8_t cont = 0;
 };
 
-// ..............................................................
-// ..............................................................
+// ------------------------------------------------------------
+// loop() -->   (cont := cont + 1; valor := medirCO2(); publicarCO2(valor, cont, 1000))
+// ------------------------------------------------------------
 void loop () {
 
   using namespace Loop;

@@ -1,3 +1,13 @@
+// ---------------------------------------------------------------------------
+// Fichero:     MainActivity.java
+// Descripción: Actividad principal: escanea los beacons BLE y envía las mediciones de nuestra placa al servidor REST mediante LogicaFakeTelefono.
+//              Diseño en doc/android_design.md.
+// Autor:       Jordi Bataller i Mascarell (código original proporcionado)
+// Aportación:  Pelin Kaynak (29/09/2026) - procesarTramaDetectada(): extrae la
+//              medición del beacon y la envía al servidor con LogicaFakeTelefono;
+//              cabeceras de fichero y de función con el diseño lógico.
+// Copyright:   (c) Jordi Bataller i Mascarell - EPSG-UPV
+// ---------------------------------------------------------------------------
 package org.jordi.prueba2025;
 
 import android.bluetooth.le.ScanSettings;
@@ -35,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int CODIGO_PETICION_PERMISOS = 11223344;
 
     // (NUEVO) IP del ordenador que ejecuta el servidor REST (misma red Wi-Fi)
-    private static final String URL_SERVIDOR = "http://192.168.1.35:8080";
+    private static final String URL_SERVIDOR = "http://172.20.10.2:8080";
 
     // (NUEVO) UUID que emite nuestra placa Arduino
     private static final String UUID_NUESTRO_BEACON = "EPSG-GTI-PROY-3A";
@@ -52,8 +62,9 @@ public class MainActivity extends AppCompatActivity {
     // (NUEVO) evita enviar varias veces la misma trama repetida
     private int ultimoContadorEnviado = -1;
 
-    // --------------------------------------------------------------
-    // --------------------------------------------------------------
+    // ------------------------------------------------------------
+    // buscarTodosLosDispositivosBTLE() -->
+    // ------------------------------------------------------------
     private void buscarTodosLosDispositivosBTLE() {
         Log.d(ETIQUETA_LOG, " buscarTodosLosDispositivosBTL(): empieza ");
 
@@ -102,8 +113,9 @@ public class MainActivity extends AppCompatActivity {
         Log.d(ETIQUETA_LOG, " buscarTodosLosDispositivosBTL(): termina ");
     } // ()
 
-    // --------------------------------------------------------------
-    // --------------------------------------------------------------
+    // ------------------------------------------------------------
+    // resultado: ScanResult --> mostrarInformacionDispositivoBTLE() -->
+    // ------------------------------------------------------------
     private void mostrarInformacionDispositivoBTLE(ScanResult resultado) {
 
         Log.d(ETIQUETA_LOG, " mostrarInformacionDispositivoBTLLE(): empieza ");
@@ -165,8 +177,9 @@ public class MainActivity extends AppCompatActivity {
 
     } // ()
 
-    // --------------------------------------------------------------
-    // --------------------------------------------------------------
+    // ------------------------------------------------------------
+    // dispositivoBuscado: Text --> buscarEsteDispositivoBTLE() -->
+    // ------------------------------------------------------------
     private void buscarEsteDispositivoBTLE(final String dispositivoBuscado) {
         Log.d(ETIQUETA_LOG, " buscarEsteDispositivoBTLE(): empieza ");
 
@@ -265,8 +278,9 @@ public class MainActivity extends AppCompatActivity {
                 seHaGuardado -> Log.d(ETIQUETA_LOG, " procesarTramaDetectada(): guardada en el servidor = " + seHaGuardado));
     } // ()
 
-    // --------------------------------------------------------------
-    // --------------------------------------------------------------
+    // ------------------------------------------------------------
+    // detenerBusquedaDispositivosBTLE() -->
+    // ------------------------------------------------------------
     private void detenerBusquedaDispositivosBTLE() {
 
         Log.d(ETIQUETA_LOG, " detenerBusquedaDispositivosBTLE(): empieza");
@@ -293,15 +307,17 @@ public class MainActivity extends AppCompatActivity {
         Log.d(ETIQUETA_LOG, " detenerBusquedaDispositivosBTLE(): termina");
     } // ()
 
-    // --------------------------------------------------------------
-    // --------------------------------------------------------------
+    // ------------------------------------------------------------
+    // v: View --> botonBuscarDispositivosBTLEPulsado() -->
+    // ------------------------------------------------------------
     public void botonBuscarDispositivosBTLEPulsado(View v) {
         Log.d(ETIQUETA_LOG, " boton buscar dispositivos BTLE Pulsado");
         this.buscarTodosLosDispositivosBTLE();
     } // ()
 
-    // --------------------------------------------------------------
-    // --------------------------------------------------------------
+    // ------------------------------------------------------------
+    // v: View --> botonBuscarNuestroDispositivoBTLEPulsado() -->
+    // ------------------------------------------------------------
     public void botonBuscarNuestroDispositivoBTLEPulsado(View v) {
         Log.d(ETIQUETA_LOG, " boton nuestro dispositivo BTLE Pulsado");
         //this.buscarEsteDispositivoBTLE( Utilidades.stringToUUID( "EPSG-GTI-PROY-3A" ) );
@@ -313,15 +329,17 @@ public class MainActivity extends AppCompatActivity {
 
     } // ()
 
-    // --------------------------------------------------------------
-    // --------------------------------------------------------------
+    // ------------------------------------------------------------
+    // v: View --> botonDetenerBusquedaDispositivosBTLEPulsado() -->
+    // ------------------------------------------------------------
     public void botonDetenerBusquedaDispositivosBTLEPulsado(View v) {
         Log.d(ETIQUETA_LOG, " boton detener busqueda dispositivos BTLE Pulsado");
         this.detenerBusquedaDispositivosBTLE();
     } // ()
 
-    // --------------------------------------------------------------
-    // --------------------------------------------------------------
+    // ------------------------------------------------------------
+    // inicializarBlueTooth() -->
+    // ------------------------------------------------------------
     private void inicializarBlueTooth() {
         Log.d(ETIQUETA_LOG, " inicializarBlueTooth(): empieza ");
         Log.d(ETIQUETA_LOG, " inicializarBlueTooth(): obtenemos adaptador BT ");
@@ -451,6 +469,9 @@ public class MainActivity extends AppCompatActivity {
     // --------------------------------------------------------------
     // --------------------------------------------------------------
     @Override
+    // ------------------------------------------------------------
+    // savedInstanceState: Bundle --> onCreate() -->
+    // ------------------------------------------------------------
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -465,8 +486,9 @@ public class MainActivity extends AppCompatActivity {
 
     } // onCreate()
 
-    // --------------------------------------------------------------
-    // --------------------------------------------------------------
+    // ------------------------------------------------------------
+    // requestCode: Z, permissions: [Text], grantResults: [Z] --> onRequestPermissionsResult() -->
+    // ------------------------------------------------------------
     public void onRequestPermissionsResult(int requestCode, String[] permissions,
                                            int[] grantResults) {
         super.onRequestPermissionsResult( requestCode, permissions, grantResults);

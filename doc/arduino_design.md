@@ -247,12 +247,15 @@ loop() -->               (cont := cont + 1; lucecitas(); valor := medirCO2(); pu
                                    ---------------------------------------------------------
 ```
 
-Función auxiliar libre (estática):
+Funciones auxiliares libres (en `ServicioEnEmisora.h`):
 
 ```text
-texto: Text, tamanyo: N --> stringAUint8AlReves() --x
-[ N ]                   <--
+texto: Text, tamanyo: N --> stringAUint8AlReves() --> [ N ]
+
+p: [ T ], n: N --> alReves() --> [ T ]          (invierte el array)
 ```
+
+Además, `ServicioEnEmisora` tiene la conversión `operator BLEService&() --> BLEService` y `EmisoraBLE` tiene una segunda versión de `encenderEmisora()` que también instala los callbacks de conexión.
 
 ---
 

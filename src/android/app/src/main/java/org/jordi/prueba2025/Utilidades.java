@@ -1,3 +1,12 @@
+// ---------------------------------------------------------------------------
+// Fichero:     Utilidades.java
+// Descripción: Conversiones entre texto, UUID y bytes (métodos estáticos).
+//              Diseño en doc/android_design.md.
+// Autor:       Jordi Bataller i Mascarell (código original proporcionado)
+// Aportación:  Pelin Kaynak - cabeceras de fichero y de función con el
+//              diseño lógico (29/09/2026)
+// Copyright:   (c) Jordi Bataller i Mascarell - EPSG-UPV
+// ---------------------------------------------------------------------------
 package org.jordi.prueba2025;
 
 
@@ -10,15 +19,17 @@ import java.util.UUID;
 // -----------------------------------------------------------------------------------
 public class Utilidades {
 
-    // -------------------------------------------------------------------------------
-    // -------------------------------------------------------------------------------
+    // ------------------------------------------------------------
+    // texto: Text --> stringToBytes() --> [Z]
+    // ------------------------------------------------------------
     public static byte[] stringToBytes ( String texto ) {
         return texto.getBytes();
         // byte[] b = string.getBytes(StandardCharsets.UTF_8); // Ja
     } // ()
 
-    // -------------------------------------------------------------------------------
-    // -------------------------------------------------------------------------------
+    // ------------------------------------------------------------
+    // uuid: Text --> stringToUUID() --> UUID
+    // ------------------------------------------------------------
     public static UUID stringToUUID( String uuid ) {
         if ( uuid.length() != 16 ) {
             throw new Error( "stringUUID: string no tiene 16 caracteres ");
@@ -36,20 +47,23 @@ public class Utilidades {
         return res;
     } // ()
 
-    // -------------------------------------------------------------------------------
-    // -------------------------------------------------------------------------------
+    // ------------------------------------------------------------
+    // uuid: UUID --> uuidToString() --> Text
+    // ------------------------------------------------------------
     public static String uuidToString ( UUID uuid ) {
         return bytesToString( dosLongToBytes( uuid.getMostSignificantBits(), uuid.getLeastSignificantBits() ) );
     } // ()
 
-    // -------------------------------------------------------------------------------
-    // -------------------------------------------------------------------------------
+    // ------------------------------------------------------------
+    // uuid: UUID --> uuidToHexString() --> Text
+    // ------------------------------------------------------------
     public static String uuidToHexString ( UUID uuid ) {
         return bytesToHexString( dosLongToBytes( uuid.getMostSignificantBits(), uuid.getLeastSignificantBits() ) );
     } // ()
 
-    // -------------------------------------------------------------------------------
-    // -------------------------------------------------------------------------------
+    // ------------------------------------------------------------
+    // bytes: [Z] --> bytesToString() --> Text
+    // ------------------------------------------------------------
     public static String bytesToString( byte[] bytes ) {
         if (bytes == null ) {
             return "";
@@ -62,8 +76,9 @@ public class Utilidades {
         return sb.toString();
     }
 
-    // -------------------------------------------------------------------------------
-    // -------------------------------------------------------------------------------
+    // ------------------------------------------------------------
+    // masSignificativos: Z, menosSignificativos: Z --> dosLongToBytes() --> [Z]
+    // ------------------------------------------------------------
     public static byte[] dosLongToBytes( long masSignificativos, long menosSignificativos ) {
         ByteBuffer buffer = ByteBuffer.allocate( 2 * Long.BYTES );
         buffer.putLong( masSignificativos );
@@ -71,20 +86,23 @@ public class Utilidades {
         return buffer.array();
     }
 
-    // -------------------------------------------------------------------------------
-    // -------------------------------------------------------------------------------
+    // ------------------------------------------------------------
+    // bytes: [Z] --> bytesToInt() --> Z   (con signo)
+    // ------------------------------------------------------------
     public static int bytesToInt( byte[] bytes ) {
         return new BigInteger(bytes).intValue();
     }
 
-    // -------------------------------------------------------------------------------
-    // -------------------------------------------------------------------------------
+    // ------------------------------------------------------------
+    // bytes: [Z] --> bytesToLong() --> Z
+    // ------------------------------------------------------------
     public static long bytesToLong( byte[] bytes ) {
         return new BigInteger(bytes).longValue();
     }
 
-    // -------------------------------------------------------------------------------
-    // -------------------------------------------------------------------------------
+    // ------------------------------------------------------------
+    // bytes: [Z] --> bytesToIntOK() --> Z
+    // ------------------------------------------------------------
     public static int bytesToIntOK( byte[] bytes ) {
         if (bytes == null ) {
             return 0;
@@ -121,8 +139,9 @@ public class Utilidades {
         return res;
     } // ()
 
-    // -------------------------------------------------------------------------------
-    // -------------------------------------------------------------------------------
+    // ------------------------------------------------------------
+    // bytes: [Z] --> bytesToHexString() --> Text
+    // ------------------------------------------------------------
     public static String bytesToHexString( byte[] bytes ) {
 
         if (bytes == null ) {
