@@ -276,7 +276,8 @@ RespuestaREST = ( codigo: Z, cuerpo: Text )
 - **LogicaFakeTelefono** tiene el mismo nombre de método que la lógica del negocio (`guardarMedicion`), igual que la lógica fake del navegador. No accede a la base de datos; solo hace `POST {urlServidor}/guardarMedicion` usando `PeticionarioREST`.
   - `crearCuerpoJSON()` construye `{"uuid": ..., "tipoMedicion": ..., "valorMedicion": ...}` con `org.json.JSONObject`. **No** incluye `timestamp` (lo genera el servidor).
   - `esRespuestaCorrecta(codigo)` es `true` solo si `codigo == 201`.
-  - El resultado (B) se entrega de forma asíncrona (callback, omitido en la notación); en este sprint se escribe en el Log (`ETIQUETA_LOG`) si fue bien o mal.
+  - El resultado (B) se entrega de forma asíncrona mediante la interfaz `ResultadoGuardarMedicion` (callback, omitido en la notación); en este sprint `MainActivity` lo escribe en el Log (`ETIQUETA_LOG`).
+  - Cada llamada crea un `PeticionarioREST` nuevo, porque una `AsyncTask` solo se puede ejecutar una vez.
 - **URL_SERVIDOR:** constante en `MainActivity`, con la IP del ordenador que ejecuta el servidor en la misma Wi‑Fi, por ejemplo `http://192.168.1.35:8080`. Hay que cambiarla antes de ejecutar.
 - **Tráfico HTTP sin cifrar:** desde Android 9 está bloqueado por defecto. Se añade `android:usesCleartextTraffic="true"` en `<application>` del `AndroidManifest.xml`. El permiso `INTERNET` ya existe.
 - **Tests de JVM y `org.json`:** en los tests unitarios la clase `org.json.JSONObject` de Android no funciona, así que se añade `testImplementation 'org.json:json:20231013'` en `app/build.gradle`.

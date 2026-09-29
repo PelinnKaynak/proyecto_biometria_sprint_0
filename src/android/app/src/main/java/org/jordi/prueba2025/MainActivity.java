@@ -34,11 +34,23 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int CODIGO_PETICION_PERMISOS = 11223344;
 
+    // (NUEVO) IP del ordenador que ejecuta el servidor REST (misma red Wi-Fi)
+    private static final String URL_SERVIDOR = "http://192.168.1.35:8080";
+
+    // (NUEVO) UUID que emite nuestra placa Arduino
+    private static final String UUID_NUESTRO_BEACON = "EPSG-GTI-PROY-3A";
+
     // --------------------------------------------------------------
     // --------------------------------------------------------------
     private BluetoothLeScanner elEscanner;
 
     private ScanCallback callbackDelEscaneo = null;
+
+    // (NUEVO)
+    private LogicaFakeTelefono laLogica;
+
+    // (NUEVO) evita enviar varias veces la misma trama repetida
+    private int ultimoContadorEnviado = -1;
 
     // --------------------------------------------------------------
     // --------------------------------------------------------------
@@ -172,6 +184,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.d(ETIQUETA_LOG, "  buscarEsteDispositivoBTLE(): onScanResult() ");
 
                 mostrarInformacionDispositivoBTLE(resultado);
+                procesarTramaDetectada(resultado); // (NUEVO)
             }
 
             @Override
@@ -221,6 +234,35 @@ public class MainActivity extends AppCompatActivity {
         this.elEscanner.startScan( filtros, settings, this.callbackDelEscaneo);
 
         Log.d(ETIQUETA_LOG, " buscarEsteDispositivoBTLE(): termina");
+    } // ()
+
+    // --------------------------------------------------------------
+    // resultado: ScanResult --> procesarTramaDetectada() -->          (NUEVO)
+    //
+    // Extrae la medición de la trama y, si es de nuestro beacon y trae
+    // un contador nuevo, la envía al servidor con la lógica fake.
+    // --------------------------------------------------------------
+    private void procesarTramaDetectada(ScanResult resultado) {
+        byte[] bytes = resultado.getScanRecord().getBytes();
+        MedicionDetectada medicion = ExtractorMedicion.extraerMedicion(new TramaIBeacon(bytes));
+
+        if (!UUID_NUESTRO_BEACON.equals(medicion.getUuid())) {
+            Log.d(ETIQUETA_LOG, " procesarTramaDetectada(): no es nuestro beacon, uuid = " + medicion.getUuid());
+            return;
+        }
+        if (medicion.getContador() == this.ultimoContadorEnviado) {
+            return;
+        }
+        this.ultimoContadorEnviado = medicion.getContador();
+
+        Log.d(ETIQUETA_LOG, " procesarTramaDetectada(): envío tipo = " + medicion.getTipoMedicion()
+                + " valor = " + medicion.getValorMedicion() + " contador = " + medicion.getContador());
+
+        this.laLogica.guardarMedicion(
+                medicion.getUuid(),
+                medicion.getTipoMedicion(),
+                medicion.getValorMedicion(),
+                seHaGuardado -> Log.d(ETIQUETA_LOG, " procesarTramaDetectada(): guardada en el servidor = " + seHaGuardado));
     } // ()
 
     // --------------------------------------------------------------
@@ -414,6 +456,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         Log.d(ETIQUETA_LOG, " onCreate(): empieza ");
+
+        this.laLogica = new LogicaFakeTelefono(URL_SERVIDOR); // (NUEVO)
 
         inicializarBlueTooth();
 
