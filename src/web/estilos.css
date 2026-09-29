@@ -1,0 +1,47 @@
+/* ---------------------------------------------------------------------------
+   Fichero:     estilos.css
+   Descripción: Estilos de la UX del navegador (doc/web_design.md).
+   Autora:      Pelin Kaynak
+   Fecha:       29/09/2026
+   Copyright:   (c) 2026 Pelin Kaynak - Proyecto Biometría y Medio Ambiente, EPSG-UPV
+   --------------------------------------------------------------------------- */
+
+body {
+  font-family: system-ui, sans-serif;
+  background: #f4f6f8;
+  color: #1d2733;
+  margin: 0;
+  padding: 2rem 1rem;
+}
+
+main {
+  max-width: 28rem;
+  margin: 0 auto;
+}
+
+#contenedorMedicion {
+  background: #ffffff;
+  border: 1px solid #d5dde5;
+  border-radius: 8px;
+  padding: 0.5rem 1.25rem;
+}
+
+#contenedorMedicion span {
+  font-weight: 600;
+}
+
+#botonActualizar {
+  margin-top: 1rem;
+  padding: 0.6rem 1.4rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 6px;
+  background: #1f6feb;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+#mensajeError {
+  color: #b42318;
+  font-weight: 600;
+}
