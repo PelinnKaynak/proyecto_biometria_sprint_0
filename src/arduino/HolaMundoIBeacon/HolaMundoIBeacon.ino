@@ -155,7 +155,7 @@ void loop () {
   
   elPublicador.publicarCO2( valorCO2,
 							cont,
-							1000 // intervalo de emisión
+							10000 // intervalo de emisión
 							);
   
   /*

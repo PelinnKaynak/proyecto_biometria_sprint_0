@@ -21,6 +21,15 @@
 // ----------------------------------------------------
 #include <vector>
 
+
+   // ----------------------------------------------------
+   // Compatibilidad (Pelin Kaynak, 29/09/2026): en el núcleo
+   // Adafruit nRF52 >= 1.0 el tipo BleSecurityMode se llama
+   // SecureMode_t. Este alias permite compilar el código
+   // original sin cambiarlo.
+   // ----------------------------------------------------
+   using BleSecurityMode = SecureMode_t;
+
 // ----------------------------------------------------
 // alReves() utilidad
 // pone al revés el contenido de una array en el mismo array

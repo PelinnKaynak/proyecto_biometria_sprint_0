@@ -8,52 +8,44 @@
 
 La parte web tiene dos capas, siguiendo la estructura `ux/` + `logicaFake/` del esqueleto de la asignatura (ver `doc/referencia/esqueletoPHP.md`):
 
-1. **LogicaFakeNavegador:** ofrece al navegador las mismas funciones que la lógica del negocio, pero por dentro hace peticiones a la API REST (`api_design.md`).
+1. **LogicaFakeNavegador:** obtiene la última medición mediante el servidor REST (`api_design.md`). No accede a la base de datos ni a la lógica del negocio.
 2. **UX (ClienteHTML):** la página que ve el usuario. Solo habla con la lógica fake.
 
 ```text
-UX (index.html + ux.js)  -->  LogicaFakeNavegador  --GET-->  API REST
-```
-
-### Tipos
-
-```text
-Medicion = ( uuid: Text, timestamp: Text, tipoMedicion: N, valorMedicion: Z )
+UX (index.html + ux.js)  -->  LogicaFakeNavegador  --GET /recuperarUltimaMedicion-->  API REST
 ```
 
 ### LogicaFakeNavegador
 
 ```text
-                                   --------- LogicaFakeNavegador --------------
-                                   |
-                                   | urlServidor: Text
-                                   |
-                                   |
-  urlServidor: Text            --> LogicaFakeNavegador() -->
-                                   |
-                                   |
-  Medicion | vacío             <-- recuperarUltimaMedicion() <--
-  error: Text                  <--
-                                   |
-                                   --------------------------------------------
+            --------- LogicaFakeNavegador ------------
+            |
+            |
+          <-- recuperarMedicion() --> JSON( UUID: Text,
+            |                               Timestamp: Text,
+            |                               TipoMedicion: N,
+            |                               ValorMedicion: Z )
+            |                         | vacío | error: Text
+            |
+            ------------------------------------------
 ```
 
 ### UX del navegador (ClienteHTML)
 
 ```text
 +--------------------------------------------------+
-|  H1  "Última medición"                           |
+|  H1  Título: "Última Medición"                   |
 |                                                  |
-|  +-- DIV contenedorMedicion -------------------+ |
-|  |  P  UUID:            <uuid: Text>           | |
-|  |  P  Timestamp:       <timestamp: Text>      | |
-|  |  P  Tipo medición:   <tipoMedicion: N>      | |
-|  |  P  Valor medición:  <valorMedicion: Z>     | |
+|  +-- DIV Contenedor (contenedorMedicion) ------+ |
+|  |  P  UUID:           Text                    | |
+|  |  P  Timestamp:      Text                    | |
+|  |  P  TipoMedicion:   N                       | |
+|  |  P  ValorMedicion:  Z                       | |
 |  +---------------------------------------------+ |
 |                                                  |
-|  [ BUTTON "Actualizar" ]                         |
+|  [ Button "Actualizar" ]                         |
 |                                                  |
-|  P  mensajeError: <Text> (oculto si no hay error)|
+|  P  Error: Text  (oculto si no hay error)        |
 +--------------------------------------------------+
 ```
 
@@ -62,7 +54,7 @@ Funciones de la UX (`ux.js`):
 ```text
 botonActualizarPulsado() -->
 
-medicion: Medicion --> mostrarMedicion() -->
+medicion: JSON( UUID: Text, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z ) --> mostrarMedicion() -->
 
 mensaje: Text --> mostrarError() -->
 ```
@@ -71,18 +63,15 @@ mensaje: Text --> mostrarError() -->
 
 ## 2. Aclaraciones del diseño
 
-- **Nombre del método:** en el documento de Sprint 0 se llamaba `recuperarMedicion()`. Se renombra a `recuperarUltimaMedicion()` para que la lógica fake tenga **exactamente** los mismos nombres que la lógica del negocio, de la que se deriva.
-- **recuperarUltimaMedicion():** hace `GET {urlServidor}/recuperarUltimaMedicion`.
-  - `200` → devuelve la `Medicion` recibida en el JSON.
+- **recuperarMedicion():** no recibe ningún dato de entrada y hace `GET /recuperarUltimaMedicion` al servidor REST (URL relativa: el mismo servidor que sirvió la página, porque el servidor REST sirve también la web).
+  - `200` → devuelve el JSON recibido con `UUID`, `Timestamp`, `TipoMedicion` y `ValorMedicion`.
   - `404` → devuelve **vacío** (`null`): todavía no hay mediciones.
   - Otro código o fallo de red → produce un error con un texto descriptivo.
-- **urlServidor:** por defecto es la cadena vacía (`""`), es decir, el mismo origen que sirvió la página (el servidor REST sirve también la web). Los tests pasan la URL del servidor de pruebas.
-- **botonActualizarPulsado():** llama a `recuperarUltimaMedicion()`; si hay medición, llama a `mostrarMedicion()`; si es vacío, muestra el mensaje *"Todavía no hay mediciones"*; si hay error, llama a `mostrarError()`.
-- **Al cargar la página** se ejecuta una vez `botonActualizarPulsado()` para que la última medición aparezca sin pulsar nada.
-- **mostrarMedicion():** junto al número del tipo se muestra su nombre, por ejemplo `11 (CO2)`, `12 (Temperatura)`, `13 (Ruido)`. Oculta el mensaje de error.
-- **Estado de ux.js:** `laLogicaFake: LogicaFakeNavegador` (creada con `urlServidor = ""`) y la tabla constante `NOMBRES_TIPO_MEDICION = { 11: "CO2", 12: "Temperatura", 13: "Ruido" }`.
-- **HTML:** cada `<p>` del contenedor tiene la etiqueta fija y un `<span>` con id (`uuid`, `timestamp`, `tipoMedicion`, `valorMedicion`) donde se escribe el dato. El botón tiene id `botonActualizar` y el párrafo de error id `mensajeError` (atributo `hidden` cuando no hay error).
-- **Separación de capas:** la UX nunca hace `fetch` directamente ni conoce las rutas REST; eso es trabajo de la lógica fake.
+- **Botón:** cuando el usuario lo pulsa, `botonActualizarPulsado()` llama a `recuperarMedicion()` de la lógica fake; si hay medición, llama a `mostrarMedicion()`; si es vacío, muestra el mensaje *"Todavía no hay mediciones"*; si hay error, llama a `mostrarError()`.
+- **mostrarMedicion():** escribe los cuatro datos, tal como llegan, en los párrafos del contenedor y oculta el mensaje de error.
+- **Estado de ux.js:** `laLogicaFake: LogicaFakeNavegador`.
+- **HTML:** cada `<p>` del contenedor tiene la etiqueta fija y un `<span>` con id (`UUID`, `Timestamp`, `TipoMedicion`, `ValorMedicion`) donde se escribe el dato. El botón tiene id `botonActualizar` y el párrafo de error id `mensajeError` (atributo `hidden` cuando no hay error).
+- **Separación de capas:** la UX nunca hace `fetch` directamente ni conoce las rutas REST ni la base de datos; la comunicación se hace mediante la lógica fake.
 - **Ficheros:** `src/web/index.html`, `src/web/estilos.css`, `src/web/ux.js`, `src/web/logicaFake/LogicaFakeNavegador.js`.
 
 ---
@@ -94,6 +83,6 @@ mensaje: Text --> mostrarError() -->
 - **Cabeceras de funciones/métodos:** cada función o método incluye su diseño lógico en un bloque de comentarios delimitado por líneas discontinuas (`--------------------`), con la notación de la asignatura.
 - **Legibilidad:** el código debe ser lo más claro y autoexplicativo posible (nombres descriptivos en castellano), de forma que casi no necesite comentarios adicionales.
 - **Tests automáticos:** con mocha, en `src/web/test/`.
-  - Lógica fake: contra el servidor REST real arrancado con una base de datos temporal; comprueban la respuesta `null` con la tabla vacía, que se recibe la medición guardada con todos sus campos, y el error cuando el servidor no está disponible.
-  - UX: con `jsdom`, sustituyendo la lógica fake por un doble de prueba; comprueban que pulsar el botón llama a `recuperarUltimaMedicion()`, que los datos se muestran en los `<p>` correctos y que un error se muestra al usuario.
+  - Lógica fake: contra el servidor REST real arrancado con una base de datos temporal; comprueban que `recuperarMedicion()` hace `GET /recuperarUltimaMedicion`, la respuesta `null` con la tabla vacía, que se recibe el JSON con `UUID`, `Timestamp`, `TipoMedicion` y `ValorMedicion`, y los errores (servidor no disponible, código 500).
+  - UX: con `jsdom`, sustituyendo la lógica fake por un doble de prueba; comprueban la estructura de la página (título, contenedor con 4 párrafos, botón, párrafo de error), que pulsar el botón llama a `recuperarMedicion()`, que los datos se muestran en los `<p>` correctos y que los errores se muestran al usuario.
 - **Fidelidad al diseño:** no añadir funciones, pantallas ni elementos que no aparezcan en este diseño.

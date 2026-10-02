@@ -36,18 +36,18 @@ describe('logica: LogicaDeNegocio', function () {
     assert.ok(fs.existsSync(ficheroTemporal), 'debe crearse el fichero de la base de datos')
   })
 
-  it('guarda una medición y la recupera como la última, con timestamp generado', async function () {
+  it('guarda una medición y la recupera como la última, con Timestamp generado', async function () {
     const antes = new Date()
     await laLogica.guardarMedicion(UUID_BEACON, CO2, 123)
 
     const medicion = await laLogica.recuperarUltimaMedicion()
-    assert.strictEqual(medicion.uuid, UUID_BEACON)
-    assert.strictEqual(medicion.tipoMedicion, CO2)
-    assert.strictEqual(medicion.valorMedicion, 123)
+    assert.strictEqual(medicion.UUID, UUID_BEACON)
+    assert.strictEqual(medicion.TipoMedicion, CO2)
+    assert.strictEqual(medicion.ValorMedicion, 123)
 
-    const momento = new Date(medicion.timestamp)
-    assert.ok(!isNaN(momento), 'timestamp debe ser una fecha ISO válida')
-    assert.ok(momento >= new Date(antes.getTime() - 1000), 'timestamp debe ser el momento de guardar')
+    const momento = new Date(medicion.Timestamp)
+    assert.ok(!isNaN(momento), 'Timestamp debe ser una fecha ISO válida')
+    assert.ok(momento >= new Date(antes.getTime() - 1000), 'Timestamp debe ser el momento de guardar')
   })
 
   it('con varias mediciones devuelve la más reciente', async function () {
@@ -56,23 +56,23 @@ describe('logica: LogicaDeNegocio', function () {
     await laLogica.guardarMedicion(UUID_BEACON, TEMPERATURA, -12)
 
     const medicion = await laLogica.recuperarUltimaMedicion()
-    assert.strictEqual(medicion.tipoMedicion, TEMPERATURA)
-    assert.strictEqual(medicion.valorMedicion, -12)
+    assert.strictEqual(medicion.TipoMedicion, TEMPERATURA)
+    assert.strictEqual(medicion.ValorMedicion, -12)
   })
 
-  it('no devuelve el id (solo los campos de Medicion)', async function () {
+  it('devuelve solo los campos de Medicion', async function () {
     await laLogica.guardarMedicion(UUID_BEACON, CO2, 123)
     const medicion = await laLogica.recuperarUltimaMedicion()
-    assert.deepStrictEqual(Object.keys(medicion).sort(), ['timestamp', 'tipoMedicion', 'uuid', 'valorMedicion'])
+    assert.deepStrictEqual(Object.keys(medicion).sort(), ['Timestamp', 'TipoMedicion', 'UUID', 'ValorMedicion'])
   })
 
   it('rechaza un tipo de medición no válido', async function () {
-    await assert.rejects(laLogica.guardarMedicion(UUID_BEACON, 99, 1), /tipoMedicion no válido/)
+    await assert.rejects(laLogica.guardarMedicion(UUID_BEACON, 99, 1), /TipoMedicion no válido/)
     assert.strictEqual(await laLogica.recuperarUltimaMedicion(), null)
   })
 
   it('rechaza datos que faltan', async function () {
-    await assert.rejects(laLogica.guardarMedicion('', CO2, 1), /uuid/)
-    await assert.rejects(laLogica.guardarMedicion(UUID_BEACON, CO2, undefined), /valorMedicion/)
+    await assert.rejects(laLogica.guardarMedicion('', CO2, 1), /UUID/)
+    await assert.rejects(laLogica.guardarMedicion(UUID_BEACON, CO2, undefined), /ValorMedicion/)
   })
 })

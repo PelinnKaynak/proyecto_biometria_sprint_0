@@ -10,14 +10,14 @@
     "test": "mocha \"src/basedatos/test/**/*.test.js\" \"src/logica/test/**/*.test.js\" \"src/api/test/**/*.test.js\" \"src/web/test/**/*.test.js\""
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20.19"
   },
   "dependencies": {
     "express": "^5.2.1",
     "sqlite3": "^6.0.1"
   },
   "devDependencies": {
-    "jsdom": "^30.1.1",
+    "jsdom": "^26.1.0",
     "mocha": "^12.0.2"
   }
 }

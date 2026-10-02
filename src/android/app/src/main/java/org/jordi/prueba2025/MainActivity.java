@@ -3,13 +3,15 @@
 // Descripción: Actividad principal: escanea los beacons BLE y envía las mediciones de nuestra placa al servidor REST mediante LogicaFakeTelefono.
 //              Diseño en doc/android_design.md.
 // Autor:       Jordi Bataller i Mascarell (código original proporcionado)
-// Aportación:  Pelin Kaynak (29/09/2026) - procesarTramaDetectada(): extrae la
+// Aportación:  Pelin Kaynak (30/09/2026) - procesarTramaDetectada(): extrae la
 //              medición del beacon y la envía al servidor con LogicaFakeTelefono;
-//              cabeceras de fichero y de función con el diseño lógico.
+//              petición de permisos Bluetooth en Android 12+; cabeceras de
+//              fichero y de función con el diseño lógico
 // Copyright:   (c) Jordi Bataller i Mascarell - EPSG-UPV
 // ---------------------------------------------------------------------------
 package org.jordi.prueba2025;
 
+import android.annotation.SuppressLint;
 import android.bluetooth.le.ScanSettings;
 import android.support.v7.app.AppCompatActivity;
 
@@ -43,9 +45,6 @@ public class MainActivity extends AppCompatActivity {
     private static final String ETIQUETA_LOG = ">>>>";
 
     private static final int CODIGO_PETICION_PERMISOS = 11223344;
-
-    // (NUEVO) IP del ordenador que ejecuta el servidor REST (misma red Wi-Fi)
-    private static final String URL_SERVIDOR = "http://172.20.10.2:8080";
 
     // (NUEVO) UUID que emite nuestra placa Arduino
     private static final String UUID_NUESTRO_BEACON = "EPSG-GTI-PROY-3A";
@@ -252,30 +251,35 @@ public class MainActivity extends AppCompatActivity {
     // --------------------------------------------------------------
     // resultado: ScanResult --> procesarTramaDetectada() -->          (NUEVO)
     //
-    // Extrae la medición de la trama y, si es de nuestro beacon y trae
-    // un contador nuevo, la envía al servidor con la lógica fake.
+    // Deshace la codificación del Arduino (major = tipo * 256 + contador,
+    // minor = valor) con TramaIBeacon y Utilidades y, si la trama es de
+    // nuestro beacon y trae un contador nuevo, envía UUID, TipoMedicion y
+    // ValorMedicion al servidor con laLogica.guardarMedicion().
     // --------------------------------------------------------------
     private void procesarTramaDetectada(ScanResult resultado) {
-        byte[] bytes = resultado.getScanRecord().getBytes();
-        MedicionDetectada medicion = ExtractorMedicion.extraerMedicion(new TramaIBeacon(bytes));
+        TramaIBeacon trama = new TramaIBeacon(resultado.getScanRecord().getBytes());
 
-        if (!UUID_NUESTRO_BEACON.equals(medicion.getUuid())) {
-            Log.d(ETIQUETA_LOG, " procesarTramaDetectada(): no es nuestro beacon, uuid = " + medicion.getUuid());
+        String uuid = Utilidades.bytesToString(trama.getUUID());
+        if (!UUID_NUESTRO_BEACON.equals(uuid)) {
+            Log.d(ETIQUETA_LOG, " procesarTramaDetectada(): no es nuestro beacon, UUID = " + uuid);
             return;
         }
-        if (medicion.getContador() == this.ultimoContadorEnviado) {
-            return;
+
+        byte[] major = trama.getMajor();
+        int tipoMedicion = major[0] & 0xFF;                          // byte alto de major
+        int contador = major[1] & 0xFF;                              // byte bajo de major
+        int valorMedicion = Utilidades.bytesToInt(trama.getMinor()); // minor
+
+        if (contador == this.ultimoContadorEnviado) {
+            return; // la misma trama repetida: ya se envió
         }
-        this.ultimoContadorEnviado = medicion.getContador();
+        this.ultimoContadorEnviado = contador;
 
-        Log.d(ETIQUETA_LOG, " procesarTramaDetectada(): envío tipo = " + medicion.getTipoMedicion()
-                + " valor = " + medicion.getValorMedicion() + " contador = " + medicion.getContador());
+        Log.d(ETIQUETA_LOG, " procesarTramaDetectada(): envío TipoMedicion = " + tipoMedicion
+                + " ValorMedicion = " + valorMedicion + " contador = " + contador);
 
-        this.laLogica.guardarMedicion(
-                medicion.getUuid(),
-                medicion.getTipoMedicion(),
-                medicion.getValorMedicion(),
-                seHaGuardado -> Log.d(ETIQUETA_LOG, " procesarTramaDetectada(): guardada en el servidor = " + seHaGuardado));
+        this.laLogica.guardarMedicion(uuid, tipoMedicion, valorMedicion,
+                exito -> Log.d(ETIQUETA_LOG, " procesarTramaDetectada(): guardada en el servidor = " + exito));
     } // ()
 
     // ------------------------------------------------------------
@@ -340,6 +344,7 @@ public class MainActivity extends AppCompatActivity {
     // ------------------------------------------------------------
     // inicializarBlueTooth() -->
     // ------------------------------------------------------------
+    @SuppressLint("MissingPermission") // (NUEVO) los permisos se comprueban con tienePermisosBluetooth()
     private void inicializarBlueTooth() {
         Log.d(ETIQUETA_LOG, " inicializarBlueTooth(): empieza ");
         Log.d(ETIQUETA_LOG, " inicializarBlueTooth(): obtenemos adaptador BT ");
@@ -348,14 +353,18 @@ public class MainActivity extends AppCompatActivity {
 
         Log.d(ETIQUETA_LOG, " inicializarBlueTooth(): habilitamos adaptador BT ");
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
+        // (NUEVO) sin permisos no se puede seguir: se piden y, cuando el
+        // usuario los concede, onRequestPermissionsResult() vuelve a llamar
+        // a inicializarBlueTooth()
+        if (!tienePermisosBluetooth()) {
+            Log.d(ETIQUETA_LOG, " inicializarBlueTooth(): no tengo permisos, los pido ");
+            requestPermissions(
+                    new String[]{Manifest.permission.BLUETOOTH_SCAN,
+                            Manifest.permission.BLUETOOTH_CONNECT,
+                            Manifest.permission.ACCESS_COARSE_LOCATION,
+                            Manifest.permission.ACCESS_FINE_LOCATION
+                    },
+                    CODIGO_PETICION_PERMISOS);
             return;
         }
         bta.enable();
@@ -468,17 +477,32 @@ public class MainActivity extends AppCompatActivity {
 
     // --------------------------------------------------------------
     // --------------------------------------------------------------
-    @Override
+    // ------------------------------------------------------------
+    // tienePermisosBluetooth() --> B          (NUEVO)
+    //
+    // true si la app puede escanear y conectar por Bluetooth
+    // (permisos BLUETOOTH_SCAN y BLUETOOTH_CONNECT, que existen
+    // desde Android 12; en versiones anteriores devuelve true)
+    // ------------------------------------------------------------
+    private boolean tienePermisosBluetooth() {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S) {
+            return true; // antes de Android 12 estos permisos no existen
+        }
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED;
+    } // ()
+
     // ------------------------------------------------------------
     // savedInstanceState: Bundle --> onCreate() -->
     // ------------------------------------------------------------
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
         Log.d(ETIQUETA_LOG, " onCreate(): empieza ");
 
-        this.laLogica = new LogicaFakeTelefono(URL_SERVIDOR); // (NUEVO)
+        this.laLogica = new LogicaFakeTelefono(); // (NUEVO)
 
         inicializarBlueTooth();
 
@@ -498,10 +522,12 @@ public class MainActivity extends AppCompatActivity {
         switch (requestCode) {
             case CODIGO_PETICION_PERMISOS:
                 // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0 &&
-                        grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (tienePermisosBluetooth()) { // (NUEVO) antes: grantResults[0]
 
                     Log.d(ETIQUETA_LOG, " onRequestPermissionResult(): permisos concedidos  !!!!");
+                    if (this.elEscanner == null) {
+                        inicializarBlueTooth(); // (NUEVO) ahora sí se puede obtener el escáner
+                    }
                     // Permission is granted. Continue the action or workflow
                     // in your app.
                 }  else {

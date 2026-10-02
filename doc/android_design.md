@@ -9,17 +9,14 @@
 App Android que escucha las tramas iBeacon de nuestra placa (`arduino_design.md`), extrae la medición y la envía al servidor REST (`api_design.md`).
 
 ```text
-Escáner BLE --> MainActivity.procesarTramaDetectada() --> ExtractorMedicion.extraerMedicion()
-                                                     --> LogicaFakeTelefono.guardarMedicion() --POST--> API REST
+Escáner BLE --> MainActivity.procesarTramaDetectada() --> LogicaFakeTelefono.guardarMedicion() --POST /guardarMedicion--> API REST
 ```
 
-Las clases `MainActivity`, `TramaIBeacon` y `Utilidades` son **código proporcionado** (ingeniería inversa). `PeticionarioREST` también es código proporcionado y se copia al proyecto. Las clases **nuevas** son `MedicionDetectada`, `ExtractorMedicion` y `LogicaFakeTelefono`; en `MainActivity` se **añaden** los elementos marcados con `(NUEVO)`.
+Las clases `MainActivity`, `TramaIBeacon` y `Utilidades` son **código proporcionado** (ingeniería inversa). `PeticionarioREST` también es código proporcionado y se copia al proyecto. La única clase **nueva** es `LogicaFakeTelefono` (documento *Diseños y prompts para generar nuevo código*, apartado 5); en `MainActivity` se **añaden** los elementos marcados con `(NUEVO)` para conectar el escaneo con la lógica fake.
 
 ### Tipos
 
 ```text
-MedicionDetectada = ( uuid: Text, tipoMedicion: N, contador: N, valorMedicion: Z )
-
 RespuestaREST = ( codigo: Z, cuerpo: Text )
 ```
 
@@ -31,7 +28,6 @@ RespuestaREST = ( codigo: Z, cuerpo: Text )
                                     | ETIQUETA_LOG: Text
                                     | CODIGO_PETICION_PERMISOS: Z
                                     | elEscaner: BluetoothLeScanner
-                                    | URL_SERVIDOR: Text                         (NUEVO)
                                     | UUID_NUESTRO_BEACON: Text                  (NUEVO)
                                     | laLogica: LogicaFakeTelefono               (NUEVO)
                                     | ultimoContadorEnviado: Z                   (NUEVO)
@@ -42,6 +38,7 @@ RespuestaREST = ( codigo: Z, cuerpo: Text )
                                     |    detenerBusquedaDispositivosBTLE() -->
                                     |    inicializarBlueTooth() -->
                                     |    resultado: ScanResult --> procesarTramaDetectada() -->   (NUEVO)
+                                    |    tienePermisosBluetooth() --> B                           (NUEVO)
                                     |
                                     |
   savedInstanceState: Bundle    --> onCreate() -->
@@ -188,72 +185,20 @@ RespuestaREST = ( codigo: Z, cuerpo: Text )
                                     -------------------------------------------------
 ```
 
-### Clase MedicionDetectada (NUEVA)
-
-```text
-                                    --------- MedicionDetectada ----------------------
-                                    |
-                                    | uuid: Text
-                                    | tipoMedicion: N
-                                    | contador: N
-                                    | valorMedicion: Z
-                                    |
-                                    |
-  uuid: Text, tipoMedicion: N   --> MedicionDetectada() -->
-  contador: N, valorMedicion: Z     |
-                                    |
-                                    |
-  Text                          <-- getUuid() <--
-                                    |
-                                    |
-  N                             <-- getTipoMedicion() <--
-                                    |
-                                    |
-  N                             <-- getContador() <--
-                                    |
-                                    |
-  Z                             <-- getValorMedicion() <--
-                                    |
-                                    -------------------------------------------------
-```
-
-### Clase ExtractorMedicion (NUEVA)
-
-```text
-                                    --------- ExtractorMedicion ----------------------
-                                    |
-                                    |
-  trama: TramaIBeacon           --> extraerMedicion() --x
-  MedicionDetectada             <-- |
-                                    |
-                                    -------------------------------------------------
-```
-
 ### Clase LogicaFakeTelefono (NUEVA)
 
 ```text
                                     --------- LogicaFakeTelefono ---------------------
                                     |
-                                    | urlServidor: Text
+                                    | URL_SERVIDOR: Text
+                                    |
+                                    |    UUID: Text, TipoMedicion: N, ValorMedicion: Z --> crearJSON() --> Text
+                                    |    codigo: Z --> esExito() --> T/F
                                     |
                                     |
-  urlServidor: Text             --> LogicaFakeTelefono() -->
-                                    |
-                                    |
-  uuid: Text                    --> guardarMedicion() <--
-  tipoMedicion: N                   |
-  valorMedicion: Z                  |
-  B                             <-- |
-                                    |
-                                    |
-  uuid: Text                    --> crearCuerpoJSON() --x
-  tipoMedicion: N                   |
-  valorMedicion: Z                  |
-  Text                          <-- |
-                                    |
-                                    |
-  codigo: Z                     --> esRespuestaCorrecta() --x
-  B                             <-- |
+  JSON( UUID: Text,             --> guardarMedicion() -->
+        TipoMedicion: N,            |
+        ValorMedicion: Z )          |
                                     |
                                     -------------------------------------------------
 ```
@@ -262,23 +207,20 @@ RespuestaREST = ( codigo: Z, cuerpo: Text )
 
 ## 2. Aclaraciones del diseño
 
-- **extraerMedicion()** deshace la codificación del Arduino:
-  - `uuid = Utilidades.bytesToString( trama.getUUID() )` → `"EPSG-GTI-PROY-3A"`.
-  - `tipoMedicion = major[0]` (byte alto de `major`; 11 = CO2).
-  - `contador = major[1] & 0xFF` (byte bajo, sin signo: 0..255).
-  - `valorMedicion = Utilidades.bytesToInt( minor )` (entero **con** signo de 16 bits, así −12 se lee bien).
 - **procesarTramaDetectada()** se llama desde el callback del escaneo de `buscarEsteDispositivoBTLE()`:
-  1. crea `TramaIBeacon` con los bytes del `ScanResult` y llama a `extraerMedicion()`;
-  2. si el `uuid` no es `UUID_NUESTRO_BEACON` (`"EPSG-GTI-PROY-3A"`), no hace nada;
-  3. si el `contador` es igual a `ultimoContadorEnviado`, no hace nada (el Arduino repite la misma trama muchas veces y así no se guardan duplicados);
-  4. si no, llama a `laLogica.guardarMedicion(uuid, tipoMedicion, valorMedicion)` y actualiza `ultimoContadorEnviado`.
+  1. crea `TramaIBeacon` con los bytes del `ScanResult`;
+  2. `UUID = Utilidades.bytesToString( trama.getUUID() )`; si no es `UUID_NUESTRO_BEACON` (`"EPSG-GTI-PROY-3A"`), no hace nada;
+  3. deshace la codificación del Arduino: `TipoMedicion = major[0]` (byte alto; 11 = CO2), `contador = major[1] & 0xFF` (byte bajo, 0..255) y `ValorMedicion = Utilidades.bytesToInt( minor )` (entero con signo, así −12 se lee bien);
+  4. si el `contador` es igual a `ultimoContadorEnviado`, no hace nada (el Arduino repite la misma trama muchas veces y así no se guardan duplicados);
+  5. si no, llama a `laLogica.guardarMedicion(UUID, TipoMedicion, ValorMedicion)` y actualiza `ultimoContadorEnviado`.
 - **ultimoContadorEnviado** empieza en −1, para que la primera trama siempre se envíe.
-- **LogicaFakeTelefono** tiene el mismo nombre de método que la lógica del negocio (`guardarMedicion`), igual que la lógica fake del navegador. No accede a la base de datos; solo hace `POST {urlServidor}/guardarMedicion` usando `PeticionarioREST`.
-  - `crearCuerpoJSON()` construye `{"uuid": ..., "tipoMedicion": ..., "valorMedicion": ...}` con `org.json.JSONObject`. **No** incluye `timestamp` (lo genera el servidor).
-  - `esRespuestaCorrecta(codigo)` es `true` solo si `codigo == 201`.
-  - El resultado (B) se entrega de forma asíncrona mediante la interfaz `ResultadoGuardarMedicion` (callback, omitido en la notación); en este sprint `MainActivity` lo escribe en el Log (`ETIQUETA_LOG`).
+- **LogicaFakeTelefono.guardarMedicion()** recibe `UUID` (texto), `TipoMedicion` (natural) y `ValorMedicion` (entero), crea el JSON `{"UUID": ..., "TipoMedicion": ..., "ValorMedicion": ...}` y hace `POST /guardarMedicion` al servidor REST con `PeticionarioREST`. **No** incluye el `Timestamp` (se genera en el backend). No accede a la base de datos ni a la lógica del negocio.
+  - Controla la respuesta del servidor: `esExito(codigo)` es T solo si `codigo == 201`; cualquier otro código (400, 404, 500, o −1 si no hay conexión) es error.
+  - El resultado (T/F) se entrega mediante un callback (interfaz `RespuestaGuardarMedicion`), que según la notación del documento de diseño no se dibuja como parámetro. En este sprint `MainActivity` lo escribe en el Log (`ETIQUETA_LOG`).
+  - `crearJSON()` y `esExito()` son privados de la clase (visibilidad de paquete en Java para poder probarlos con JUnit).
   - Cada llamada crea un `PeticionarioREST` nuevo, porque una `AsyncTask` solo se puede ejecutar una vez.
-- **URL_SERVIDOR:** constante en `MainActivity`, con la IP del ordenador que ejecuta el servidor en la misma Wi‑Fi, por ejemplo `http://192.168.1.35:8080`. Hay que cambiarla antes de ejecutar.
+- **URL_SERVIDOR:** constante privada de `LogicaFakeTelefono`. En el emulador de Android Studio es `http://10.0.2.2:8080` (dirección especial del ordenador que ejecuta el emulador). En un teléfono real es la IPv4 del ordenador en la misma Wi‑Fi o punto de acceso, por ejemplo `http://172.20.10.2:8080`.
+- **Permisos (Android 12+):** el código original salía de `inicializarBlueTooth()` sin pedir los permisos `BLUETOOTH_SCAN`/`BLUETOOTH_CONNECT`, así que el escáner nunca se creaba. Ahora, si `tienePermisosBluetooth()` es falso, se piden y `onRequestPermissionsResult()` vuelve a llamar a `inicializarBlueTooth()` cuando se conceden. En versiones anteriores a Android 12 `tienePermisosBluetooth()` devuelve `true`.
 - **Tráfico HTTP sin cifrar:** desde Android 9 está bloqueado por defecto. Se añade `android:usesCleartextTraffic="true"` en `<application>` del `AndroidManifest.xml`. El permiso `INTERNET` ya existe.
 - **Tests de JVM y `org.json`:** en los tests unitarios la clase `org.json.JSONObject` de Android no funciona, así que se añade `testImplementation 'org.json:json:20231013'` en `app/build.gradle`.
 - **Servicio en segundo plano:** el código `HolaMundoServicio2021` (ver `doc/referencia/holaMundoServicio.md`) no se usa en este sprint; el escaneo se hace desde `MainActivity`. Se usará en sprints posteriores.
@@ -292,7 +234,6 @@ RespuestaREST = ( codigo: Z, cuerpo: Text )
 - **Cabeceras de funciones/métodos:** cada función o método incluye su diseño lógico en un bloque de comentarios delimitado por líneas discontinuas (`--------------------`), con la notación de la asignatura.
 - **Legibilidad:** el código debe ser lo más claro y autoexplicativo posible (nombres descriptivos en castellano), de forma que casi no necesite comentarios adicionales.
 - **Tests automáticos:** JUnit 4 en `app/src/test/java/` (se ejecutan con `./gradlew test`, sin teléfono):
-  - `ExtractorMedicionTest`: con bytes de una trama construida a mano (UUID `EPSG-GTI-PROY-3A`, major `0x0B05`, minor `123`) comprueba uuid, tipo 11, contador 5 y valor 123; y con minor `0xFFF4` comprueba el valor −12.
-  - `LogicaFakeTelefonoTest`: comprueba que `crearCuerpoJSON()` produce las tres claves correctas y sin `timestamp`, y que `esRespuestaCorrecta()` es `true` para 201 y `false` para 400, 404 y 500.
+  - `LogicaFakeTelefonoTest`: comprueba la creación del JSON (claves `UUID`, `TipoMedicion` y `ValorMedicion`, sin `Timestamp`, valores negativos) y las respuestas de éxito (201) y error (400, 404, 500, −1) del servidor.
   - El envío real al servidor se comprueba en la prueba de funcionamiento de extremo a extremo (criterio de aceptación en el `README.md`).
 - **Fidelidad al diseño:** no modificar la lógica del código proporcionado salvo lo marcado como `(NUEVO)`, y no añadir clases ni métodos que no aparezcan en este diseño.

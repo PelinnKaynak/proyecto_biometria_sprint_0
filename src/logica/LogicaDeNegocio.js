@@ -4,7 +4,7 @@
 //              la base de datos SQLite (tabla Mediciones). No contiene código
 //              HTTP/REST. Diseño en doc/logica_design.md.
 // Autora:      Pelin Kaynak
-// Fecha:       29/09/2026
+// Fecha:       30/09/2026
 // Copyright:   (c) 2026 Pelin Kaynak - Proyecto Biometría y Medio Ambiente, EPSG-UPV
 // ---------------------------------------------------------------------------
 
@@ -42,29 +42,29 @@ class LogicaDeNegocio {
   }
 
   // -------------------------------------------------------------------------
-  // uuid: Text, tipoMedicion: N, valorMedicion: Z --> guardarMedicion() -->
+  // UUID: Text, TipoMedicion: N, ValorMedicion: Z --> guardarMedicion() -->
   //
-  // Genera el timestamp (ISO 8601, UTC) y guarda la medición.
+  // Genera el Timestamp (ISO 8601, UTC) y guarda la medición.
   // Falla si faltan datos o si el tipo no es 11, 12 o 13.
   // -------------------------------------------------------------------------
-  async guardarMedicion(uuid, tipoMedicion, valorMedicion) {
-    if (typeof uuid !== 'string' || uuid.length === 0) {
-      throw new Error('uuid debe ser un texto no vacío')
+  async guardarMedicion(UUID, TipoMedicion, ValorMedicion) {
+    if (typeof UUID !== 'string' || UUID.length === 0) {
+      throw new Error('UUID debe ser un texto no vacío')
     }
-    if (!TIPOS_VALIDOS.includes(tipoMedicion)) {
-      throw new Error(`tipoMedicion no válido: ${tipoMedicion}`)
+    if (!TIPOS_VALIDOS.includes(TipoMedicion)) {
+      throw new Error(`TipoMedicion no válido: ${TipoMedicion}`)
     }
-    if (!Number.isInteger(valorMedicion)) {
-      throw new Error('valorMedicion debe ser un número entero')
+    if (!Number.isInteger(ValorMedicion)) {
+      throw new Error('ValorMedicion debe ser un número entero')
     }
 
     await this.#baseDeDatosAbierta
-    const timestamp = new Date().toISOString()
+    const Timestamp = new Date().toISOString()
 
     return new Promise((resolver, rechazar) => {
       this.#laConexion.run(
-        'INSERT INTO Mediciones (uuid, timestamp, tipoMedicion, valorMedicion) VALUES (?, ?, ?, ?)',
-        [uuid, timestamp, tipoMedicion, valorMedicion],
+        'INSERT INTO Mediciones (UUID, Timestamp, TipoMedicion, ValorMedicion) VALUES (?, ?, ?, ?)',
+        [UUID, Timestamp, TipoMedicion, ValorMedicion],
         (error) => (error ? rechazar(error) : resolver())
       )
     })
@@ -73,7 +73,7 @@ class LogicaDeNegocio {
   // -------------------------------------------------------------------------
   // recuperarUltimaMedicion() --> Medicion | vacío
   //
-  // Medicion = ( uuid: Text, timestamp: Text, tipoMedicion: N, valorMedicion: Z )
+  // Medicion = ( UUID: Text, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )
   // Devuelve null si la tabla está vacía.
   // -------------------------------------------------------------------------
   async recuperarUltimaMedicion() {
@@ -81,7 +81,9 @@ class LogicaDeNegocio {
 
     return new Promise((resolver, rechazar) => {
       this.#laConexion.get(
-        'SELECT uuid, timestamp, tipoMedicion, valorMedicion FROM Mediciones ORDER BY id DESC LIMIT 1',
+        // rowid es interno de SQLite (no es un campo de la tabla): desempata
+        // dos mediciones guardadas en el mismo milisegundo.
+        'SELECT UUID, Timestamp, TipoMedicion, ValorMedicion FROM Mediciones ORDER BY Timestamp DESC, rowid DESC LIMIT 1',
         (error, fila) => (error ? rechazar(error) : resolver(fila ?? null))
       )
     })

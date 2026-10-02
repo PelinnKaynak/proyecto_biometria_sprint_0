@@ -68,10 +68,10 @@ describe('basedatos: script crearBaseDeDatos.sql', function () {
   it('crea la tabla Mediciones con las columnas del diseño', async function () {
     const columnas = await consultar(conexion, 'PRAGMA table_info(Mediciones)')
     const nombres = columnas.map((columna) => columna.name)
-    assert.deepStrictEqual(nombres, ['id', 'uuid', 'timestamp', 'tipoMedicion', 'valorMedicion'])
+    assert.deepStrictEqual(nombres, ['UUID', 'Timestamp', 'TipoMedicion', 'ValorMedicion'])
 
-    const id = columnas.find((columna) => columna.name === 'id')
-    assert.strictEqual(id.pk, 1, 'id debe ser la clave primaria')
+    const tipos = columnas.map((columna) => columna.type)
+    assert.deepStrictEqual(tipos, ['TEXT', 'TIMESTAMP', 'INTEGER', 'INTEGER'])
   })
 
   it('se puede ejecutar dos veces sin error (CREATE TABLE IF NOT EXISTS)', async function () {
@@ -80,28 +80,28 @@ describe('basedatos: script crearBaseDeDatos.sql', function () {
 
   it('permite insertar y leer una medición', async function () {
     await ejecutarScript(conexion, fs.readFileSync(SCRIPT_DATOS_PRUEBA, 'utf8'))
-    const filas = await consultar(conexion, 'SELECT * FROM Mediciones WHERE tipoMedicion = 11')
+    const filas = await consultar(conexion, 'SELECT * FROM Mediciones WHERE TipoMedicion = 11')
     assert.strictEqual(filas.length, 1)
-    assert.strictEqual(filas[0].uuid, 'EPSG-GTI-PROY-3A')
-    assert.strictEqual(filas[0].valorMedicion, 123)
+    assert.strictEqual(filas[0].UUID, 'EPSG-GTI-PROY-3A')
+    assert.strictEqual(filas[0].ValorMedicion, 123)
   })
 
-  it('autoincrementa el id', async function () {
+  it('recupera las mediciones guardadas (3 datos de prueba)', async function () {
     await ejecutarScript(conexion, fs.readFileSync(SCRIPT_DATOS_PRUEBA, 'utf8'))
-    const filas = await consultar(conexion, 'SELECT id FROM Mediciones ORDER BY id')
-    assert.deepStrictEqual(filas.map((fila) => fila.id), [1, 2, 3])
+    const filas = await consultar(conexion, 'SELECT * FROM Mediciones ORDER BY Timestamp')
+    assert.deepStrictEqual(filas.map((fila) => fila.TipoMedicion), [11, 12, 13])
   })
 
   it('guarda valores negativos (temperatura -12)', async function () {
     await ejecutarScript(conexion, fs.readFileSync(SCRIPT_DATOS_PRUEBA, 'utf8'))
-    const filas = await consultar(conexion, 'SELECT valorMedicion FROM Mediciones WHERE tipoMedicion = 12')
-    assert.strictEqual(filas[0].valorMedicion, -12)
+    const filas = await consultar(conexion, 'SELECT ValorMedicion FROM Mediciones WHERE TipoMedicion = 12')
+    assert.strictEqual(filas[0].ValorMedicion, -12)
   })
 
-  it('rechaza un tipoMedicion no válido', async function () {
+  it('rechaza un TipoMedicion no válido', async function () {
     await assert.rejects(
       ejecutarScript(conexion,
-        "INSERT INTO Mediciones (uuid, timestamp, tipoMedicion, valorMedicion) VALUES ('x', '2026-01-01T00:00:00.000Z', 99, 1)"),
+        "INSERT INTO Mediciones (UUID, Timestamp, TipoMedicion, ValorMedicion) VALUES ('x', '2026-01-01T00:00:00.000Z', 99, 1)"),
       /CHECK constraint failed/
     )
   })

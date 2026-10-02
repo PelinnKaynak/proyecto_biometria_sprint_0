@@ -1,10 +1,10 @@
 // ---------------------------------------------------------------------------
 // Fichero:     LogicaFakeTelefonoTest.java
-// Descripción: Tests JUnit de las partes de LogicaFakeTelefono que no
-//              necesitan red: el JSON enviado y la interpretación del código
-//              de respuesta (diseño en doc/android_design.md).
+// Descripción: Tests JUnit de LogicaFakeTelefono: creación del JSON enviado
+//              y respuestas de éxito y error del servidor
+//              (diseño en doc/android_design.md).
 // Autora:      Pelin Kaynak
-// Fecha:       29/09/2026
+// Fecha:       30/09/2026
 // Copyright:   (c) 2026 Pelin Kaynak - Proyecto Biometría y Medio Ambiente, EPSG-UPV
 // ---------------------------------------------------------------------------
 package org.jordi.prueba2025;
@@ -19,22 +19,28 @@ import org.junit.Test;
 public class LogicaFakeTelefonoTest {
 
     @Test
-    public void elCuerpoJSONTieneLasTresClavesYNoTieneTimestamp() throws Exception {
-        String cuerpo = LogicaFakeTelefono.crearCuerpoJSON("EPSG-GTI-PROY-3A", 11, 123);
-        JSONObject json = new JSONObject(cuerpo);
+    public void elJSONTieneUUIDTipoMedicionYValorMedicionSinTimestamp() throws Exception {
+        JSONObject json = new JSONObject(LogicaFakeTelefono.crearJSON("EPSG-GTI-PROY-3A", 11, 123));
 
-        assertEquals("EPSG-GTI-PROY-3A", json.getString("uuid"));
-        assertEquals(11, json.getInt("tipoMedicion"));
-        assertEquals(123, json.getInt("valorMedicion"));
+        assertEquals("EPSG-GTI-PROY-3A", json.getString("UUID"));
+        assertEquals(11, json.getInt("TipoMedicion"));
+        assertEquals(123, json.getInt("ValorMedicion"));
         assertEquals(3, json.length());
-        assertFalse(json.has("timestamp"));
+        assertFalse(json.has("Timestamp"));
     }
 
     @Test
-    public void soloEl201EsRespuestaCorrecta() {
-        assertTrue(LogicaFakeTelefono.esRespuestaCorrecta(201));
-        assertFalse(LogicaFakeTelefono.esRespuestaCorrecta(400));
-        assertFalse(LogicaFakeTelefono.esRespuestaCorrecta(404));
-        assertFalse(LogicaFakeTelefono.esRespuestaCorrecta(500));
+    public void elJSONAdmiteValoresNegativos() throws Exception {
+        JSONObject json = new JSONObject(LogicaFakeTelefono.crearJSON("EPSG-GTI-PROY-3A", 12, -12));
+        assertEquals(-12, json.getInt("ValorMedicion"));
+    }
+
+    @Test
+    public void el201EsExitoYLosDemasCodigosSonError() {
+        assertTrue(LogicaFakeTelefono.esExito(201));
+        assertFalse(LogicaFakeTelefono.esExito(400));
+        assertFalse(LogicaFakeTelefono.esExito(404));
+        assertFalse(LogicaFakeTelefono.esExito(500));
+        assertFalse(LogicaFakeTelefono.esExito(-1)); // sin conexión
     }
 }

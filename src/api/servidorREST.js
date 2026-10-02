@@ -4,7 +4,7 @@
 //              LogicaDeNegocio y sus resultados a JSON. También sirve la
 //              página web de src/web. Diseño en doc/api_design.md.
 // Autora:      Pelin Kaynak
-// Fecha:       29/09/2026
+// Fecha:       30/09/2026
 // Copyright:   (c) 2026 Pelin Kaynak - Proyecto Biometría y Medio Ambiente, EPSG-UPV
 // ---------------------------------------------------------------------------
 
@@ -15,37 +15,40 @@ const { LogicaDeNegocio } = require('../logica/LogicaDeNegocio')
 const CARPETA_WEB = path.join(__dirname, '..', 'web')
 const TIPOS_VALIDOS = [11, 12, 13]
 
-let laLogica = null
+let logica = null // instancia privada de LogicaDeNegocio (solo la usa este módulo)
 let elServidorHTTP = null
 
 // ---------------------------------------------------------------------------
-// cuerpo: MedicionEntrante --> esMedicionEntranteValida() --> B
+// cuerpo: JSON( UUID: Text, TipoMedicion: N, ValorMedicion: Z ) --> esMedicionEntranteValida() --> B
 // ---------------------------------------------------------------------------
 function esMedicionEntranteValida(cuerpo) {
   return (
     cuerpo !== null &&
     typeof cuerpo === 'object' &&
-    typeof cuerpo.uuid === 'string' &&
-    cuerpo.uuid.length > 0 &&
-    TIPOS_VALIDOS.includes(cuerpo.tipoMedicion) &&
-    Number.isInteger(cuerpo.valorMedicion)
+    typeof cuerpo.UUID === 'string' &&
+    cuerpo.UUID.length > 0 &&
+    TIPOS_VALIDOS.includes(cuerpo.TipoMedicion) &&
+    Number.isInteger(cuerpo.ValorMedicion)
   )
 }
 
 // ---------------------------------------------------------------------------
-// MedicionEntrante (JSON) --> POST /guardarMedicion --> 201 ( resultado: "ok" )
-//                                                  | 400 | 500 ( error: Text )
+// JSON( UUID: Text, TipoMedicion: N, ValorMedicion: Z ) --> POST /guardarMedicion --> EXITO | ERROR
+//
+// EXITO = 201 { resultado: "ok" }
+// ERROR = 400 (faltan datos o no son válidos) | 500 { error: Text }
+// El Timestamp no se recibe: lo genera la lógica del negocio.
 // ---------------------------------------------------------------------------
 async function rutaGuardarMedicion(peticion, respuesta) {
   const cuerpo = peticion.body
   if (!esMedicionEntranteValida(cuerpo)) {
     return respuesta.status(400).json({
-      error: 'se necesita uuid (texto), tipoMedicion (11, 12 o 13) y valorMedicion (entero)',
+      error: 'se necesita UUID (texto), TipoMedicion (11, 12 o 13) y ValorMedicion (entero)',
     })
   }
 
   try {
-    await laLogica.guardarMedicion(cuerpo.uuid, cuerpo.tipoMedicion, cuerpo.valorMedicion)
+    await logica.guardarMedicion(cuerpo.UUID, cuerpo.TipoMedicion, cuerpo.ValorMedicion)
     respuesta.status(201).json({ resultado: 'ok' })
   } catch (error) {
     respuesta.status(500).json({ error: `no se pudo guardar la medición: ${error.message}` })
@@ -53,11 +56,15 @@ async function rutaGuardarMedicion(peticion, respuesta) {
 }
 
 // ---------------------------------------------------------------------------
-// GET /recuperarUltimaMedicion --> 200 Medicion (JSON) | 404 | 500 ( error: Text )
+// GET /recuperarUltimaMedicion --> JSON( UUID: Text, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )
+//                                | ERROR
+//
+// JSON  = 200
+// ERROR = 404 (todavía no hay mediciones) | 500 { error: Text }
 // ---------------------------------------------------------------------------
 async function rutaRecuperarUltimaMedicion(peticion, respuesta) {
   try {
-    const medicion = await laLogica.recuperarUltimaMedicion()
+    const medicion = await logica.recuperarUltimaMedicion()
     if (medicion === null) {
       return respuesta.status(404).json({ error: 'todavía no hay mediciones' })
     }
@@ -83,7 +90,7 @@ function responderJSONMalFormado(error, peticion, respuesta, siguiente) {
 // puerto: N, nombreBD: Text --> arrancarServidor() --> ServidorHTTP
 // ---------------------------------------------------------------------------
 function arrancarServidor(puerto, nombreBD) {
-  laLogica = new LogicaDeNegocio(nombreBD)
+  logica = new LogicaDeNegocio(nombreBD)
 
   const aplicacion = express()
   aplicacion.use(express.json())
@@ -106,9 +113,9 @@ async function pararServidor() {
     await new Promise((resolver) => elServidorHTTP.close(() => resolver()))
     elServidorHTTP = null
   }
-  if (laLogica) {
-    await laLogica.cerrar()
-    laLogica = null
+  if (logica) {
+    await logica.cerrar()
+    logica = null
   }
 }
 

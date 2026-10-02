@@ -1,34 +1,26 @@
 // ---------------------------------------------------------------------------
 // Fichero:     LogicaFakeNavegador.js
-// Descripción: Lógica fake del navegador. Ofrece a la UX los mismos nombres
-//              de métodos que la lógica del negocio, pero por dentro hace
-//              peticiones a la API REST. Diseño en doc/web_design.md.
+// Descripción: Lógica fake del navegador. Obtiene la última medición con
+//              GET /recuperarUltimaMedicion. No accede a la base de datos ni
+//              a la lógica del negocio. Diseño en doc/web_design.md.
 // Autora:      Pelin Kaynak
-// Fecha:       29/09/2026
+// Fecha:       30/09/2026
 // Copyright:   (c) 2026 Pelin Kaynak - Proyecto Biometría y Medio Ambiente, EPSG-UPV
 // ---------------------------------------------------------------------------
 
 class LogicaFakeNavegador {
   // -------------------------------------------------------------------------
-  // urlServidor: Text --> LogicaFakeNavegador() -->
+  // recuperarMedicion() --> JSON( UUID: Text, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )
+  //                     | vacío | error: Text
   //
-  // urlServidor = "" significa el mismo origen que sirvió la página.
+  // Hace GET /recuperarUltimaMedicion al mismo servidor que sirvió la página.
+  // 200 -> la medición · 404 -> null (todavía no hay mediciones)
+  // otro código o fallo de red -> Error
   // -------------------------------------------------------------------------
-  constructor(urlServidor = '') {
-    this.urlServidor = urlServidor
-  }
-
-  // -------------------------------------------------------------------------
-  // recuperarUltimaMedicion() --> Medicion | vacío
-  //                           --> error: Text
-  //
-  // Medicion = ( uuid: Text, timestamp: Text, tipoMedicion: N, valorMedicion: Z )
-  // 200 -> Medicion · 404 -> null · otro código o fallo de red -> Error
-  // -------------------------------------------------------------------------
-  async recuperarUltimaMedicion() {
+  async recuperarMedicion() {
     let respuesta
     try {
-      respuesta = await fetch(`${this.urlServidor}/recuperarUltimaMedicion`)
+      respuesta = await fetch('/recuperarUltimaMedicion')
     } catch (errorDeRed) {
       throw new Error('No se puede conectar con el servidor')
     }

@@ -6,7 +6,7 @@
 
 ## 1. Diseño del componente
 
-Programa para la placa **Adafruit Feather nRF52840 Express**. Obtiene una medición (ficticia en este sprint) y la emite periódicamente en una trama **iBeacon** por Bluetooth Low Energy.
+Programa para la placa **SparkFun Pro nRF52840 Mini** (chip nRF52840, programada con el núcleo *Adafruit nRF52*). Obtiene una medición (ficticia en este sprint) y la emite periódicamente en una trama **iBeacon** por Bluetooth Low Energy.
 
 ### Tipos
 
@@ -34,7 +34,7 @@ setup() -->              (espera el puerto serie, enciende la emisora, inicia el
 
 lucecitas() -->          (secuencia de parpadeos del LED)
 
-loop() -->               (cont := cont + 1; lucecitas(); valor := medirCO2(); publicarCO2(valor, cont, 1000))
+loop() -->               (cont := cont + 1; lucecitas(); valor := medirCO2(); publicarCO2(valor, cont, 10000))
 ```
 
 ### Clase LED
@@ -262,8 +262,9 @@ Además, `ServicioEnEmisora` tiene la conversión `operator BLEService&() --> BL
 ## 2. Aclaraciones del diseño
 
 - **Código proporcionado:** este componente es código del profesor (carpeta `Arduino-NoCambia`). Su lógica **no se modifica**; solo se añaden cabeceras de fichero y de función con el diseño lógico (rúbrica, "Buenas prácticas").
-- **Medición ficticia:** `Medidor::medirCO2()` devuelve el valor fijo **123** (y `medirTemperatura()` devuelve −12). Es el valor que debe aparecer en la página web en la prueba de funcionamiento. Para la defensa se puede cambiar a otro número reconocible.
+- **Medición ficticia:** según la rúbrica del Sprint 0 ("se introduce una medida ficticia en el código de la placa Arduino"), en este sprint no se lee el sensor de ozono. `Medidor::medirCO2()` devuelve el valor fijo **123** (y `medirTemperatura()` devuelve −12). Es el valor que debe aparecer en la página web en la prueba de funcionamiento. Para la defensa se puede cambiar a otro número reconocible.
 - **Codificación de la trama:** `publicarCO2()` pone en `major` el tipo de medición en el byte alto y el contador en el byte bajo (`major = (CO2 << 8) + contador`), y el valor en `minor`. El teléfono tiene que deshacer esta codificación (ver `android_design.md`).
+- **Tiempo de emisión (cambio respecto al código original):** en `loop()` se llama a `publicarCO2(valor, cont, 10000)` en lugar de `1000`. Con 1 segundo de anuncio cada ~5 segundos (el resto lo ocupa `lucecitas()`) la placa no aparecía en *nRF Connect*; con 10 segundos se detecta sin problemas. Es el único cambio de lógica en el código proporcionado.
 - **UUID del beacon:** `EPSG-GTI-PROY-3A` (16 caracteres ASCII). El teléfono lo usa para reconocer *nuestro* beacon entre los demás.
 - **Callbacks:** los métodos `instalarCallbackConexionEstablecida()`, `instalarCallbackConexionTerminada()` e `instalarCallbackCaracteristicaEscrita()` reciben funciones de callback. Según la notación de la asignatura, los callbacks se omiten en el diseño lógico, por eso no aparecen como parámetros.
 - **Conexión con otros componentes:** la única salida del componente es la trama iBeacon, que recibe el componente `android`.

@@ -1,11 +1,11 @@
 // ---------------------------------------------------------------------------
 // Fichero:     LogicaFakeTelefono.java
-// Descripción: Lógica fake del teléfono. Ofrece guardarMedicion() con el
-//              mismo nombre que la lógica del negocio, pero por dentro hace
+// Descripción: Lógica fake del teléfono. guardarMedicion() crea un JSON con
+//              UUID, TipoMedicion y ValorMedicion y lo envía con
 //              POST /guardarMedicion al servidor REST. No accede a la base de
-//              datos. Diseño en doc/android_design.md.
+//              datos ni a la lógica del negocio. Diseño en doc/android_design.md.
 // Autora:      Pelin Kaynak
-// Fecha:       29/09/2026
+// Fecha:       30/09/2026
 // Copyright:   (c) 2026 Pelin Kaynak - Proyecto Biometría y Medio Ambiente, EPSG-UPV
 // ---------------------------------------------------------------------------
 package org.jordi.prueba2025;
@@ -15,65 +15,60 @@ import org.json.JSONObject;
 
 public class LogicaFakeTelefono {
 
-    private static final int CODIGO_CREADO = 201;
+    // Dirección del servidor REST:
+    //   emulador       -> http://10.0.2.2:8080 (el ordenador que ejecuta el emulador)
+    //   teléfono real  -> http://<IPv4 del ordenador en la misma Wi-Fi>:8080
+    private static final String URL_SERVIDOR = "http://10.0.2.2:8080";
+
+    private static final int CODIGO_EXITO = 201;
 
     // -----------------------------------------------------------------------
-    // Resultado asíncrono de guardarMedicion(): B (true si se guardó)
+    // Callback con el resultado de guardarMedicion(): T (éxito) / F (error)
     // -----------------------------------------------------------------------
-    public interface ResultadoGuardarMedicion {
-        void callback(boolean seHaGuardado);
-    }
-
-    private final String urlServidor;
-
-    // -----------------------------------------------------------------------
-    // urlServidor: Text --> LogicaFakeTelefono() -->
-    // -----------------------------------------------------------------------
-    public LogicaFakeTelefono(String urlServidor) {
-        this.urlServidor = urlServidor;
+    public interface RespuestaGuardarMedicion {
+        void callback(boolean exito);
     }
 
     // -----------------------------------------------------------------------
-    // uuid: Text, tipoMedicion: N, valorMedicion: Z --> guardarMedicion() --> B
+    // JSON( UUID: Text, TipoMedicion: N, ValorMedicion: Z ) --> guardarMedicion() -->
     //
-    // Envía POST {urlServidor}/guardarMedicion. El resultado (B) llega por
-    // el callback cuando responde el servidor.
+    // Crea el JSON (sin Timestamp: lo genera el backend) y hace
+    // POST /guardarMedicion. La respuesta del servidor (éxito o error) llega
+    // por el callback.
     // -----------------------------------------------------------------------
-    public void guardarMedicion(String uuid, int tipoMedicion, int valorMedicion,
-                                final ResultadoGuardarMedicion resultado) {
+    public void guardarMedicion(String UUID, int TipoMedicion, int ValorMedicion,
+                                final RespuestaGuardarMedicion respuesta) {
         String cuerpo;
         try {
-            cuerpo = crearCuerpoJSON(uuid, tipoMedicion, valorMedicion);
+            cuerpo = crearJSON(UUID, TipoMedicion, ValorMedicion);
         } catch (JSONException error) {
-            resultado.callback(false);
+            respuesta.callback(false);
             return;
         }
 
         new PeticionarioREST().hacerPeticionREST(
                 "POST",
-                urlServidor + "/guardarMedicion",
+                URL_SERVIDOR + "/guardarMedicion",
                 cuerpo,
-                (codigo, cuerpoRespuesta) -> resultado.callback(esRespuestaCorrecta(codigo)));
+                (codigo, cuerpoRespuesta) -> respuesta.callback(esExito(codigo)));
     }
 
     // -----------------------------------------------------------------------
-    // uuid: Text, tipoMedicion: N, valorMedicion: Z --> crearCuerpoJSON() --> Text
-    //
-    // No incluye timestamp: lo genera el servidor.
+    // UUID: Text, TipoMedicion: N, ValorMedicion: Z --> crearJSON() --> Text     (privado)
     // -----------------------------------------------------------------------
-    public static String crearCuerpoJSON(String uuid, int tipoMedicion, int valorMedicion)
+    static String crearJSON(String UUID, int TipoMedicion, int ValorMedicion)
             throws JSONException {
         JSONObject json = new JSONObject();
-        json.put("uuid", uuid);
-        json.put("tipoMedicion", tipoMedicion);
-        json.put("valorMedicion", valorMedicion);
+        json.put("UUID", UUID);
+        json.put("TipoMedicion", TipoMedicion);
+        json.put("ValorMedicion", ValorMedicion);
         return json.toString();
     }
 
     // -----------------------------------------------------------------------
-    // codigo: Z --> esRespuestaCorrecta() --> B
+    // codigo: Z --> esExito() --> T/F                                          (privado)
     // -----------------------------------------------------------------------
-    public static boolean esRespuestaCorrecta(int codigo) {
-        return codigo == CODIGO_CREADO;
+    static boolean esExito(int codigo) {
+        return codigo == CODIGO_EXITO;
     }
 }

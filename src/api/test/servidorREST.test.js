@@ -13,7 +13,7 @@ const os = require('os')
 const path = require('path')
 const { arrancarServidor, pararServidor } = require('../servidorREST')
 
-const MEDICION_CO2 = { uuid: 'EPSG-GTI-PROY-3A', tipoMedicion: 11, valorMedicion: 123 }
+const MEDICION_CO2 = { UUID: 'EPSG-GTI-PROY-3A', TipoMedicion: 11, ValorMedicion: 123 }
 
 // ---------------------------------------------------------------------------
 // url: Text, cuerpo: Text --> enviarPOST() --> Response
@@ -44,13 +44,13 @@ describe('api: servidor REST', function () {
   })
 
   it('POST /guardarMedicion con datos que faltan -> 400', async function () {
-    const respuesta = await enviarPOST(`${urlBase}/guardarMedicion`, JSON.stringify({ uuid: 'x' }))
+    const respuesta = await enviarPOST(`${urlBase}/guardarMedicion`, JSON.stringify({ UUID: 'x' }))
     assert.strictEqual(respuesta.status, 400)
     assert.ok((await respuesta.json()).error)
   })
 
   it('POST /guardarMedicion con tipo no válido -> 400', async function () {
-    const cuerpo = JSON.stringify({ ...MEDICION_CO2, tipoMedicion: 99 })
+    const cuerpo = JSON.stringify({ ...MEDICION_CO2, TipoMedicion: 99 })
     const respuesta = await enviarPOST(`${urlBase}/guardarMedicion`, cuerpo)
     assert.strictEqual(respuesta.status, 400)
   })
@@ -67,24 +67,24 @@ describe('api: servidor REST', function () {
     assert.ok((await respuesta.json()).error)
   })
 
-  it('GET /recuperarUltimaMedicion después de un POST -> 200 con la misma medición y timestamp', async function () {
+  it('GET /recuperarUltimaMedicion después de un POST -> 200 con la misma medición y Timestamp', async function () {
     await enviarPOST(`${urlBase}/guardarMedicion`, JSON.stringify(MEDICION_CO2))
 
     const respuesta = await fetch(`${urlBase}/recuperarUltimaMedicion`)
     assert.strictEqual(respuesta.status, 200)
 
     const medicion = await respuesta.json()
-    assert.strictEqual(medicion.uuid, MEDICION_CO2.uuid)
-    assert.strictEqual(medicion.tipoMedicion, MEDICION_CO2.tipoMedicion)
-    assert.strictEqual(medicion.valorMedicion, MEDICION_CO2.valorMedicion)
-    assert.ok(!isNaN(new Date(medicion.timestamp)), 'debe incluir un timestamp válido')
+    assert.strictEqual(medicion.UUID, MEDICION_CO2.UUID)
+    assert.strictEqual(medicion.TipoMedicion, MEDICION_CO2.TipoMedicion)
+    assert.strictEqual(medicion.ValorMedicion, MEDICION_CO2.ValorMedicion)
+    assert.ok(!isNaN(new Date(medicion.Timestamp)), 'debe incluir un timestamp válido')
   })
 
-  it('no acepta timestamp del cliente: lo genera el servidor', async function () {
-    const cuerpo = JSON.stringify({ ...MEDICION_CO2, timestamp: '1999-01-01T00:00:00.000Z' })
+  it('no acepta Timestamp del cliente: lo genera el servidor', async function () {
+    const cuerpo = JSON.stringify({ ...MEDICION_CO2, Timestamp: '1999-01-01T00:00:00.000Z' })
     await enviarPOST(`${urlBase}/guardarMedicion`, cuerpo)
 
     const medicion = await (await fetch(`${urlBase}/recuperarUltimaMedicion`)).json()
-    assert.notStrictEqual(medicion.timestamp, '1999-01-01T00:00:00.000Z')
+    assert.notStrictEqual(medicion.Timestamp, '1999-01-01T00:00:00.000Z')
   })
 })
