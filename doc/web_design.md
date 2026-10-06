@@ -49,9 +49,13 @@ UX (index.html + ux.js)  -->  LogicaFakeNavegador  --GET /recuperarUltimaMedicio
 +--------------------------------------------------+
 ```
 
-Funciones de la UX (`ux.js`):
+Estado y funciones de la UX (`ux.js`):
 
 ```text
+laLogicaFake: LogicaFakeNavegador
+NOMBRES_TIPO_MEDICION = { 11: "CO2", 12: "Temperatura", 13: "Ruido" }
+FORMATO_FECHA: formato de fecha y hora local (dd/mm/aaaa, hh:mm:ss)
+
 botonActualizarPulsado() -->
 
 medicion: JSON( UUID: Text, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z ) --> mostrarMedicion() -->
@@ -68,8 +72,8 @@ mensaje: Text --> mostrarError() -->
   - `404` → devuelve **vacío** (`null`): todavía no hay mediciones.
   - Otro código o fallo de red → produce un error con un texto descriptivo.
 - **Botón:** cuando el usuario lo pulsa, `botonActualizarPulsado()` llama a `recuperarMedicion()` de la lógica fake; si hay medición, llama a `mostrarMedicion()`; si es vacío, muestra el mensaje *"Todavía no hay mediciones"*; si hay error, llama a `mostrarError()`.
-- **mostrarMedicion():** escribe los cuatro datos, tal como llegan, en los párrafos del contenedor y oculta el mensaje de error.
-- **Estado de ux.js:** `laLogicaFake: LogicaFakeNavegador`.
+- **mostrarMedicion():** escribe los cuatro datos en los párrafos del contenedor y oculta el mensaje de error. Para que el usuario los entienda, el `Timestamp` se muestra como fecha y hora local (ej. `06/10/2026, 11:52:54`) y el `TipoMedicion` con su nombre (`11` → `CO2`, `12` → `Temperatura`, `13` → `Ruido`); un tipo desconocido se muestra con su número. Los datos que llegan del servidor no cambian: solo cambia cómo se muestran.
+- **Estado de ux.js:** `laLogicaFake: LogicaFakeNavegador`, la tabla constante `NOMBRES_TIPO_MEDICION` y el formato de fecha `FORMATO_FECHA`.
 - **HTML:** cada `<p>` del contenedor tiene la etiqueta fija y un `<span>` con id (`UUID`, `Timestamp`, `TipoMedicion`, `ValorMedicion`) donde se escribe el dato. El botón tiene id `botonActualizar` y el párrafo de error id `mensajeError` (atributo `hidden` cuando no hay error).
 - **Separación de capas:** la UX nunca hace `fetch` directamente ni conoce las rutas REST ni la base de datos; la comunicación se hace mediante la lógica fake.
 - **Ficheros:** `src/web/index.html`, `src/web/estilos.css`, `src/web/ux.js`, `src/web/logicaFake/LogicaFakeNavegador.js`.
@@ -84,5 +88,5 @@ mensaje: Text --> mostrarError() -->
 - **Legibilidad:** el código debe ser lo más claro y autoexplicativo posible (nombres descriptivos en castellano), de forma que casi no necesite comentarios adicionales.
 - **Tests automáticos:** con mocha, en `src/web/test/`.
   - Lógica fake: contra el servidor REST real arrancado con una base de datos temporal; comprueban que `recuperarMedicion()` hace `GET /recuperarUltimaMedicion`, la respuesta `null` con la tabla vacía, que se recibe el JSON con `UUID`, `Timestamp`, `TipoMedicion` y `ValorMedicion`, y los errores (servidor no disponible, código 500).
-  - UX: con `jsdom`, sustituyendo la lógica fake por un doble de prueba; comprueban la estructura de la página (título, contenedor con 4 párrafos, botón, párrafo de error), que pulsar el botón llama a `recuperarMedicion()`, que los datos se muestran en los `<p>` correctos y que los errores se muestran al usuario.
+  - UX: con `jsdom`, sustituyendo la lógica fake por un doble de prueba; comprueban la estructura de la página (título, contenedor con 4 párrafos, botón, párrafo de error), que pulsar el botón llama a `recuperarMedicion()`, que los datos se muestran en los `<p>` correctos (fecha local y nombre del tipo), y que los errores se muestran al usuario.
 - **Fidelidad al diseño:** no añadir funciones, pantallas ni elementos que no aparezcan en este diseño.

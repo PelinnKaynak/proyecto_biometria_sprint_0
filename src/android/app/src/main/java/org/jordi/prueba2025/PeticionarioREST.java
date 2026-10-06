@@ -41,6 +41,9 @@ public class PeticionarioREST extends AsyncTask<Void, Void, Boolean> {
     private String cuerpoRespuesta = "";
 
     // --------------------------------------------------------------------
+    // metodo: Text, urlDestino: Text, cuerpo: Text --> hacerPeticionREST() -->
+    // (la respuesta ( codigo: Z, cuerpo: Text ) llega por el callback,
+    //  que se omite en la notación)
     // --------------------------------------------------------------------
     public void hacerPeticionREST (String metodo, String urlDestino, String cuerpo, RespuestaREST  laRespuesta) {
         this.elMetodo = metodo;
@@ -52,12 +55,14 @@ public class PeticionarioREST extends AsyncTask<Void, Void, Boolean> {
     }
 
     // --------------------------------------------------------------------
+    // PeticionarioREST() -->
     // --------------------------------------------------------------------
     public PeticionarioREST() {
         Log.d("clienterestandroid", "constructor()");
     }
 
     // --------------------------------------------------------------------
+    // doInBackground() --> T/F          (privado: lo llama AsyncTask en otro hilo)
     // --------------------------------------------------------------------
     @Override
     protected Boolean doInBackground(Void... params) {
@@ -137,6 +142,7 @@ public class PeticionarioREST extends AsyncTask<Void, Void, Boolean> {
     } // ()
 
     // --------------------------------------------------------------------
+    // comoFue: T/F --> onPostExecute() -->   (privado: lo llama AsyncTask al terminar)
     // --------------------------------------------------------------------
     protected void onPostExecute(Boolean comoFue) {
         // llamado tras doInBackground()

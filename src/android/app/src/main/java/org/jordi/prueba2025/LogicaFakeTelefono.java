@@ -18,7 +18,7 @@ public class LogicaFakeTelefono {
     // Dirección del servidor REST:
     //   emulador       -> http://10.0.2.2:8080 (el ordenador que ejecuta el emulador)
     //   teléfono real  -> http://<IPv4 del ordenador en la misma Wi-Fi>:8080
-    private static final String URL_SERVIDOR = "http://10.0.2.2:8080";
+    private static final String URL_SERVIDOR = "http://172.20.10.2:8080";
 
     private static final int CODIGO_EXITO = 201;
 

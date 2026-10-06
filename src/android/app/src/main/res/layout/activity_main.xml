@@ -1,34 +1,91 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.widget.LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-android:orientation="vertical"
-xmlns:app="http://schemas.android.com/apk/res-auto"
-xmlns:tools="http://schemas.android.com/tools"
-android:layout_width="match_parent"
-android:layout_height="match_parent"
-tools:context=".MainActivity">
+<!-- Pantalla principal: título y los tres botones del escaneo BTLE,
+     centrados en una tarjeta. Los id y onClick son los del código original. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:background="@color/fondo"
+    android:padding="24dp"
+    tools:context=".MainActivity">
 
-<Button
-    android:id="@+id/botonBuscarDispositivosBTLE"
-    android:text="Buscar Dispositivos BTLE nou 4"
-    android:onClick="botonBuscarDispositivosBTLEPulsado"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Beacon GTI3A-2025"
+        android:textColor="@color/verde_oscuro"
+        android:textSize="24sp"
+        android:textStyle="bold" />
 
-<Button
-    android:id="@+id/botonDetenerBusquedaDispositivosBTLE"
-    android:text="Detener búsaqueda Dispositivos BTLE"
-    android:onClick="botonDetenerBusquedaDispositivosBTLEPulsado"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="24dp"
+        android:text="Proyecto Biometría · Sprint 0"
+        android:textColor="@color/texto_suave"
+        android:textSize="14sp" />
 
-<Button
-    android:id="@+id/botonBuscarNuestroDispositivoBTLE"
-    android:text="Buscar nuestro dispositivo  BTLE"
-    android:onClick="botonBuscarNuestroDispositivoBTLEPulsado"
-    android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/tarjeta"
+        android:elevation="4dp"
+        android:padding="20dp">
 
-</android.widget.LinearLayout>
+        <Button
+            android:id="@+id/botonBuscarNuestroDispositivoBTLE"
+            android:text="Buscar nuestro dispositivo BTLE"
+            android:onClick="botonBuscarNuestroDispositivoBTLEPulsado"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:background="@drawable/boton_principal"
+            android:stateListAnimator="@null"
+            android:textAllCaps="false"
+            android:textColor="@color/white"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/botonBuscarDispositivosBTLE"
+            android:text="Buscar todos los dispositivos BTLE"
+            android:onClick="botonBuscarDispositivosBTLEPulsado"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/boton_secundario"
+            android:stateListAnimator="@null"
+            android:textAllCaps="false"
+            android:textColor="@color/verde"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/botonDetenerBusquedaDispositivosBTLE"
+            android:text="Detener búsqueda"
+            android:onClick="botonDetenerBusquedaDispositivosBTLEPulsado"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="16dp"
+            android:background="@drawable/boton_detener"
+            android:stateListAnimator="@null"
+            android:textAllCaps="false"
+            android:textColor="@color/rojo"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:gravity="center"
+        android:text="Los resultados aparecen en Logcat (etiqueta &gt;&gt;&gt;&gt;)\ny en la página web del servidor."
+        android:textColor="@color/texto_suave"
+        android:textSize="12sp" />
+
+</LinearLayout>

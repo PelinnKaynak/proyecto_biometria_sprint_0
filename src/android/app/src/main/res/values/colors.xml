@@ -7,4 +7,14 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Colores de la app (los mismos que la página web) -->
+    <color name="verde">#FF2E7D5B</color>
+    <color name="verde_oscuro">#FF1F5A41</color>
+    <color name="verde_claro">#FFE6F2EC</color>
+    <color name="fondo">#FFF3F7F5</color>
+    <color name="texto">#FF1D2B25</color>
+    <color name="texto_suave">#FF5B6B64</color>
+    <color name="rojo">#FFB42318</color>
+    <color name="rojo_claro">#FFFDECEA</color>
 </resources>

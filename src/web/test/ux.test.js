@@ -88,10 +88,23 @@ describe('web: UX del navegador', function () {
     const documento = ventana.document
 
     assert.strictEqual(documento.getElementById('UUID').textContent, 'EPSG-GTI-PROY-3A')
-    assert.strictEqual(documento.getElementById('Timestamp').textContent, '2026-09-29T10:15:30.000Z')
-    assert.strictEqual(documento.getElementById('TipoMedicion').textContent, '11')
+    const fechaEsperada = new Date(MEDICION.Timestamp).toLocaleString('es-ES', {
+      day: '2-digit', month: '2-digit', year: 'numeric',
+      hour: '2-digit', minute: '2-digit', second: '2-digit',
+    })
+    assert.strictEqual(documento.getElementById('Timestamp').textContent, fechaEsperada)
+    assert.match(fechaEsperada, /^29\/09\/2026, \d{2}:15:30$/)
+    assert.strictEqual(documento.getElementById('TipoMedicion').textContent, 'CO2')
     assert.strictEqual(documento.getElementById('ValorMedicion').textContent, '123')
     assert.strictEqual(documento.getElementById('mensajeError').hidden, true)
+  })
+
+  it('muestra el nombre de cada tipo (12 Temperatura, 13 Ruido) y el número si es desconocido', async function () {
+    for (const [tipo, texto] of [[12, 'Temperatura'], [13, 'Ruido'], [99, '99']]) {
+      const { ventana } = crearPagina({ ...MEDICION, TipoMedicion: tipo })
+      await pulsarBoton(ventana)
+      assert.strictEqual(ventana.document.getElementById('TipoMedicion').textContent, texto)
+    }
   })
 
   it('muestra un mensaje de error al usuario si falla la petición', async function () {

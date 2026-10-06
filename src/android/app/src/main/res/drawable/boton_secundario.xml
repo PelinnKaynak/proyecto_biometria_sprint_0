@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Botón secundario: blanco con borde verde; verde claro al pulsarlo -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_pressed="true">
+        <shape android:shape="rectangle">
+            <solid android:color="@color/verde_claro" />
+            <stroke android:width="2dp" android:color="@color/verde" />
+            <corners android:radius="28dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/white" />
+            <stroke android:width="2dp" android:color="@color/verde" />
+            <corners android:radius="28dp" />
+        </shape>
+    </item>
+</selector>
