@@ -7,7 +7,7 @@
 //              diseño lógico (29/09/2026)
 // Copyright:   (c) Jordi Bataller i Mascarell - EPSG-UPV
 // ---------------------------------------------------------------------------
-package org.jordi.prueba2025;
+package com.pelinkaynak.biometria;
 
 
 import java.math.BigInteger;

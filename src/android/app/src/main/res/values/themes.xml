@@ -1,6 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Theme.Prueba2025" parent="Theme.AppCompat.Light.DarkActionBar">
+    <style name="Theme.ProyectoBiometria" parent="Theme.AppCompat.Light.DarkActionBar">
         <!-- Colores de la app (los mismos que la página web) -->
         <item name="colorPrimary">@color/verde</item>
         <item name="colorPrimaryDark">@color/verde_oscuro</item>

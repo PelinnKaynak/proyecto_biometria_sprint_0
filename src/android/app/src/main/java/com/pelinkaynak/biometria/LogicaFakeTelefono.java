@@ -8,7 +8,7 @@
 // Fecha:       30/09/2026
 // Copyright:   (c) 2026 Pelin Kaynak - Proyecto Biometría y Medio Ambiente, EPSG-UPV
 // ---------------------------------------------------------------------------
-package org.jordi.prueba2025;
+package com.pelinkaynak.biometria;
 
 import org.json.JSONException;
 import org.json.JSONObject;

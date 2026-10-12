@@ -3,11 +3,11 @@ plugins {
 }
 
 android {
-    namespace 'org.jordi.prueba2025'
+    namespace 'com.pelinkaynak.biometria'
     compileSdk 33
 
     defaultConfig {
-        applicationId "org.jordi.prueba2025"
+        applicationId "com.pelinkaynak.biometria"
         minSdk 28
         targetSdk 32
         versionCode 1

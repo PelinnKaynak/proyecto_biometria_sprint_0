@@ -8,7 +8,7 @@
 // Copyright:   (c) Jordi Bataller i Mascarell - EPSG-UPV
 // ---------------------------------------------------------------------------
 
-package org.jordi.prueba2025;
+package com.pelinkaynak.biometria;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;

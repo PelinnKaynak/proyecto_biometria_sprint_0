@@ -1,6 +1,6 @@
 # Diseño del componente: android
 
-**Autora del diseño:** Pelin Kaynak · **Sprint:** 0 · **Implementación:** `src/android/` (paquete `org.jordi.prueba2025`)
+**Autora del diseño:** Pelin Kaynak · **Sprint:** 0 · **Implementación:** `src/android/` (paquete `com.pelinkaynak.biometria`)
 
 ---
 
