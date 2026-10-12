@@ -32,6 +32,7 @@
 
 // ----------------------------------------------------------
 // ----------------------------------------------------------
+// EmisoraBLE class: talks to the Bluetooth hardware. It is the one that really broadcasts.
 class EmisoraBLE {
 private:
 
@@ -48,6 +49,7 @@ public:
 
   // ------------------------------------------------------------
   // nombreEmisora: Text, fabricanteID: N, txPower: Z --> EmisoraBLE() -->
+  // What it does: saves the name, manufacturer ID and power of the emitter.
   // ------------------------------------------------------------
   EmisoraBLE( const char * nombreEmisora_, const uint16_t fabricanteID_,
 			  const int8_t txPower_ ) 
@@ -83,6 +85,7 @@ public:
 	
   // ------------------------------------------------------------
   // encenderEmisora() -->
+  // What it does: turns on Bluetooth on the board and stops any old broadcast.
   // ------------------------------------------------------------
   void encenderEmisora() {
 	// Serial.println ( "Bluefruit.begin() " );
@@ -94,6 +97,7 @@ public:
 
   // ------------------------------------------------------------
   // encenderEmisora() -->   (versión que también instala los callbacks de conexión)
+  // What it does: turns on Bluetooth and installs the 'connected' / 'disconnected' callbacks. Not used in Sprint 0.
   // ------------------------------------------------------------
   void encenderEmisora( CallbackConexionEstablecida cbce,
 						CallbackConexionTerminada cbct ) {
@@ -107,6 +111,7 @@ public:
 
   // ------------------------------------------------------------
   // detenerAnuncio() -->
+  // What it does: stops the current broadcast (if there is one).
   // ------------------------------------------------------------
   void detenerAnuncio() {
 
@@ -121,6 +126,7 @@ public:
   // estaAnunciando() -> Boleano
   // ------------------------------------------------------------
   // estaAnunciando() --> B
+  // What it does: returns true if the board is broadcasting right now.
   // ------------------------------------------------------------
   bool estaAnunciando() {
 	return Bluefruit.Advertising.isRunning();
@@ -128,6 +134,7 @@ public:
 
   // ------------------------------------------------------------
   // beaconUUID: [N]_16, major: Z, minor: Z, rssi: N --> emitirAnuncioIBeacon() -->
+  // What it does: builds an iBeacon packet (UUID, major, minor, rssi) and starts broadcasting it.
   // ------------------------------------------------------------
   void emitirAnuncioIBeacon( uint8_t * beaconUUID, int16_t major, int16_t minor, uint8_t rssi ) {
 
@@ -219,6 +226,7 @@ public:
   */
   // ------------------------------------------------------------
   // carga: Text, tamanyoCarga: N --> emitirAnuncioIBeaconLibre() -->
+  // What it does: broadcasts any 21 bytes of free text instead of the iBeacon format. Teacher's test, not used.
   // ------------------------------------------------------------
   void emitirAnuncioIBeaconLibre( const char * carga, const uint8_t tamanyoCarga ) {
 
@@ -282,6 +290,7 @@ public:
 
   // ------------------------------------------------------------
   // servicio: ServicioEnEmisora --> anyadirServicio() --> B
+  // What it does: adds a BLE service (a 'folder' of data) to the board. Not used in Sprint 0.
   // ------------------------------------------------------------
   bool anyadirServicio( ServicioEnEmisora & servicio ) {
 
@@ -302,6 +311,7 @@ public:
   
   // ------------------------------------------------------------
   // servicio: ServicioEnEmisora --> anyadirServicioConSusCaracteristicas() --> B
+  // What it does: adds the service when there are no characteristics left (end of the recursion).
   // ------------------------------------------------------------
   bool anyadirServicioConSusCaracteristicas( ServicioEnEmisora & servicio ) { 
 	return (*this).anyadirServicio( servicio );
@@ -310,6 +320,7 @@ public:
   // ------------------------------------------------------------
   // servicio: ServicioEnEmisora, caracteristicas: [Caracteristica]
   //     --> anyadirServicioConSusCaracteristicas() --> B
+  // What it does: adds each characteristic to the service one by one, then adds the service. Not used.
   // ------------------------------------------------------------
   template <typename ... T>
   bool anyadirServicioConSusCaracteristicas( ServicioEnEmisora & servicio,
@@ -325,6 +336,7 @@ public:
   // ------------------------------------------------------------
   // servicio: ServicioEnEmisora, caracteristicas: [Caracteristica]
   //     --> anyadirServicioConSusCaracteristicasYActivar() --> B
+  // What it does: adds the service with its characteristics and activates it. Not used in Sprint 0.
   // ------------------------------------------------------------
   template <typename ... T>
   bool anyadirServicioConSusCaracteristicasYActivar( ServicioEnEmisora & servicio,
@@ -341,6 +353,7 @@ public:
 
   // ------------------------------------------------------------
   // instalarCallbackConexionEstablecida() -->   (el callback se omite en la notación)
+  // What it does: says which function to call when a phone connects. Not used in Sprint 0.
   // ------------------------------------------------------------
   void instalarCallbackConexionEstablecida( CallbackConexionEstablecida cb ) {
 	Bluefruit.Periph.setConnectCallback( cb );
@@ -348,6 +361,7 @@ public:
 
   // ------------------------------------------------------------
   // instalarCallbackConexionTerminada() -->   (el callback se omite en la notación)
+  // What it does: says which function to call when a phone disconnects. Not used in Sprint 0.
   // ------------------------------------------------------------
   void instalarCallbackConexionTerminada( CallbackConexionTerminada cb ) {
 	Bluefruit.Periph.setDisconnectCallback( cb );
@@ -355,6 +369,7 @@ public:
 
   // ------------------------------------------------------------
   // connHandle: N --> getConexion() --> BLEConnection
+  // What it does: returns the connection with number 'connHandle'. Not used in Sprint 0.
   // ------------------------------------------------------------
   BLEConnection * getConexion( uint16_t connHandle ) {
 	return Bluefruit.Connection( connHandle );

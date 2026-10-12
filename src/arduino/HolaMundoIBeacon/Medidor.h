@@ -15,6 +15,7 @@
 
 // ------------------------------------------------------
 // ------------------------------------------------------
+// Medidor class: the 'sensor'. For now it returns fake fixed values.
 class Medidor {
 
   // .....................................................
@@ -27,12 +28,14 @@ public:
   // constructor
   // ------------------------------------------------------------
   // Medidor() -->
+  // What it does: creates the meter. Nothing to prepare yet.
   // ------------------------------------------------------------
   Medidor(  ) {
   } // ()
 
   // ------------------------------------------------------------
   // iniciarMedidor() -->
+  // What it does: prepares the sensor. Empty for now (no real sensor in Sprint 0).
   // ------------------------------------------------------------
   void iniciarMedidor() {
 	// las cosas que no se puedan hacer en el constructor, if any
@@ -40,6 +43,7 @@ public:
 
   // ------------------------------------------------------------
   // medirCO2() --> Z          (valor ficticio: 123)
+  // What it does: returns the CO2 value. Always 123 for now (fake value).
   // ------------------------------------------------------------
   int medirCO2() {
 	return 123;
@@ -47,6 +51,7 @@ public:
 
   // ------------------------------------------------------------
   // medirTemperatura() --> Z  (valor ficticio: -12)
+  // What it does: returns the temperature. Always -12 (fake value, not used in Sprint 0).
   // ------------------------------------------------------------
   int medirTemperatura() {
 	return -12; // qué frío !

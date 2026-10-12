@@ -20,11 +20,13 @@
 
 // ----------------------------------------------------------
 // ----------------------------------------------------------
+// PuertoSerie class: lets the board write messages to the PC (Serial Monitor).
 class PuertoSerie  {
 
 public:
   // ------------------------------------------------------------
   // baudios: Z --> PuertoSerie() -->
+  // What it does: opens the serial port at 'baudios' speed (115200).
   // ------------------------------------------------------------
   PuertoSerie (long baudios) {
 	Serial.begin( baudios );
@@ -33,6 +35,7 @@ public:
 
   // ------------------------------------------------------------
   // esperarDisponible() -->
+  // What it does: waits until the serial port is ready, so no message is lost.
   // ------------------------------------------------------------
   void esperarDisponible() {
 
@@ -44,6 +47,7 @@ public:
 
   // ------------------------------------------------------------
   // mensaje: T --> escribir() -->
+  // What it does: writes 'mensaje' (text or number) on the Serial Monitor.
   // ------------------------------------------------------------
   template<typename T>
   void escribir (T mensaje) {

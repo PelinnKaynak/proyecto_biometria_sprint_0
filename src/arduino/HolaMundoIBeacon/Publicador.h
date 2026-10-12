@@ -19,6 +19,7 @@
 
 // --------------------------------------------------------------
 // --------------------------------------------------------------
+// Publicador class: prepares the measurement (UUID, major, minor) and asks EmisoraBLE to send it.
 class Publicador {
 
   // ............................................................
@@ -56,6 +57,7 @@ public:
 
   // ------------------------------------------------------------
   // Publicador() -->
+  // What it does: creates the publisher (its EmisoraBLE is created inside).
   // ------------------------------------------------------------
   Publicador( ) {
 	// ATENCION: no hacerlo aquí. (*this).laEmisora.encenderEmisora();
@@ -64,6 +66,7 @@ public:
 
   // ------------------------------------------------------------
   // encenderEmisora() -->
+  // What it does: turns on Bluetooth through EmisoraBLE.
   // ------------------------------------------------------------
   void encenderEmisora() {
 	(*this).laEmisora.encenderEmisora();
@@ -71,6 +74,8 @@ public:
 
   // ------------------------------------------------------------
   // valorCO2: Z, contador: N, tiempoEspera: Z --> publicarCO2() -->
+  // What it does: sends the CO2 value in iBeacon packets: major = (11 << 8) + contador,
+  //               minor = valorCO2. Broadcasts for 'tiempoEspera' ms and then stops.
   // ------------------------------------------------------------
   void publicarCO2( int16_t valorCO2, uint8_t contador,
 					long tiempoEspera ) {
@@ -108,6 +113,7 @@ public:
 
   // ------------------------------------------------------------
   // valorTemperatura: Z, contador: N, tiempoEspera: Z --> publicarTemperatura() -->
+  // What it does: same as publicarCO2 but for temperature (type 12). Not used in Sprint 0.
   // ------------------------------------------------------------
   void publicarTemperatura( int16_t valorTemperatura,
 							uint8_t contador, long tiempoEspera ) {

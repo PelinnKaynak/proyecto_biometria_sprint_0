@@ -35,6 +35,7 @@
 // pone al revés el contenido de una array en el mismo array
 // ------------------------------------------------------------
 // p: [T], n: N --> alReves() --> [T]
+// What it does: reverses an array in place ([1,2,3] -> [3,2,1]). Not used in Sprint 0.
 // ------------------------------------------------------------
 template< typename T >
 T *  alReves( T * p, int n ) {
@@ -50,6 +51,7 @@ T *  alReves( T * p, int n ) {
 
 // ------------------------------------------------------------
 // texto: Text, tamanyo: N --> stringAUint8AlReves() --> [N]
+// What it does: copies a text into a byte array in reverse order (to build a BLE UUID).
 // ------------------------------------------------------------
 uint8_t * stringAUint8AlReves( const char * pString, uint8_t * pUint, int tamMax ) {
 
@@ -65,6 +67,7 @@ uint8_t * stringAUint8AlReves( const char * pString, uint8_t * pUint, int tamMax
 
 // ----------------------------------------------------------
 // ----------------------------------------------------------
+// ServicioEnEmisora class: a BLE service = a 'folder' of values a connected phone can read. Not used in Sprint 0.
 class ServicioEnEmisora {
 
 public:
@@ -80,6 +83,7 @@ public:
 											   uint8_t * data, uint16_t len); 
   // .........................................................
   // .........................................................
+  // Caracteristica class: one value inside a service (a 'file' inside the folder).
   class Caracteristica {
   private:
 	uint8_t uuidCaracteristica[16] = { // el uuid se copia aquí (al revés) a partir de un string-c
@@ -99,6 +103,7 @@ public:
 
 	// ------------------------------------------------------------
 	// nombreCaracteristica: Text --> Caracteristica() -->
+	// What it does: creates a characteristic whose UUID is made from its name.
 	// ------------------------------------------------------------
 	Caracteristica( const char * nombreCaracteristica_ )
 	  :
@@ -110,6 +115,7 @@ public:
 	// ------------------------------------------------------------
 	// nombreCaracteristica: Text, props: N, permisoRead: BleSecurityMode,
 	// permisoWrite: BleSecurityMode, tam: N --> Caracteristica() -->
+	// What it does: creates a characteristic and also sets its properties, permissions and size.
 	// ------------------------------------------------------------
 	Caracteristica( const char * nombreCaracteristica_ ,
 					uint8_t props,
@@ -127,6 +133,7 @@ public:
 	// CHR_PROPS_WRITE , CHR_PROPS_READ ,  CHR_PROPS_NOTIFY 
 	// ------------------------------------------------------------
 	// props: N --> asignarPropiedades() -->
+	// What it does: sets what the phone can do with this value (read, write, notify).
 	// ------------------------------------------------------------
 	void asignarPropiedades ( uint8_t props ) {
 	  // no puedo escribir AUN si el constructor llama a esto: Serial.println( " laCaracteristica.setProperties( props ); ");
@@ -137,6 +144,7 @@ public:
 	// BleSecurityMode::SECMODE_OPEN  , BleSecurityMode::SECMODE_NO_ACCESS
 	// ------------------------------------------------------------
 	// permisoRead: BleSecurityMode, permisoWrite: BleSecurityMode --> asignarPermisos() -->
+	// What it does: sets who is allowed to read and write this value.
 	// ------------------------------------------------------------
 	void asignarPermisos( BleSecurityMode permisoRead, BleSecurityMode permisoWrite ) {
 	  // no puedo escribir AUN si el constructor llama a esto: Serial.println( "laCaracteristica.setPermission( permisoRead, permisoWrite ); " );
@@ -145,6 +153,7 @@ public:
 
 	// ------------------------------------------------------------
 	// tam: N --> asignarTamanyoDatos() -->
+	// What it does: sets the maximum size (in bytes) of this value.
 	// ------------------------------------------------------------
 	void asignarTamanyoDatos( uint8_t tam ) {
 	  // no puedo escribir AUN si el constructor llama a esto: Serial.print( " (*this).laCaracteristica.setFixedLen( tam = " );
@@ -157,6 +166,7 @@ public:
 	// ------------------------------------------------------------
 	// props: N, permisoRead: BleSecurityMode, permisoWrite: BleSecurityMode, tam: N
 	//     --> asignarPropiedadesPermisosYTamanyoDatos() -->
+	// What it does: sets properties, permissions and size in one call.
 	// ------------------------------------------------------------
 	void asignarPropiedadesPermisosYTamanyoDatos( uint8_t props,
 												 BleSecurityMode permisoRead,
@@ -170,6 +180,7 @@ public:
 
 	// ------------------------------------------------------------
 	// str: Text --> escribirDatos() --> N
+	// What it does: saves a new value; returns how many bytes were written.
 	// ------------------------------------------------------------
 	uint16_t escribirDatos( const char * str ) {
 	  // Serial.print( " return (*this).laCaracteristica.write( str  = " );
@@ -184,6 +195,7 @@ public:
 
 	// ------------------------------------------------------------
 	// str: Text --> notificarDatos() --> N
+	// What it does: saves a new value and notifies the connected phone; returns bytes sent.
 	// ------------------------------------------------------------
 	uint16_t notificarDatos( const char * str ) {
 	  
@@ -194,6 +206,7 @@ public:
 
 	// ------------------------------------------------------------
 	// instalarCallbackCaracteristicaEscrita() -->   (el callback se omite en la notación)
+	// What it does: says which function to call when the phone writes this value.
 	// ------------------------------------------------------------
 	void instalarCallbackCaracteristicaEscrita( CallbackCaracteristicaEscrita cb ) {
 	  (*this).laCaracteristica.setWriteCallback( cb );
@@ -201,6 +214,7 @@ public:
 
 	// ------------------------------------------------------------
 	// activar() -->
+	// What it does: starts the characteristic so the phone can use it.
 	// ------------------------------------------------------------
 	void activar() {
 	  err_t error = (*this).laCaracteristica.begin();
@@ -236,6 +250,7 @@ public:
   
   // ------------------------------------------------------------
   // nombreServicio: Text --> ServicioEnEmisora() -->
+  // What it does: creates a service whose UUID is made from its name.
   // ------------------------------------------------------------
   ServicioEnEmisora( const char * nombreServicio_ )
 	:
@@ -246,6 +261,7 @@ public:
   
   // ------------------------------------------------------------
   // escribeUUID() -->
+  // What it does: prints the service UUID on the Serial Monitor (for debugging).
   // ------------------------------------------------------------
   void escribeUUID() {
 	Serial.println ( "**********" );
@@ -257,6 +273,7 @@ public:
 
   // ------------------------------------------------------------
   // car: Caracteristica --> anyadirCaracteristica() -->
+  // What it does: adds a characteristic to the list of this service.
   // ------------------------------------------------------------
   void anyadirCaracteristica( Caracteristica & car ) {
 	(*this).lasCaracteristicas.push_back( & car );
@@ -264,6 +281,7 @@ public:
 
   // ------------------------------------------------------------
   // activarServicio() -->
+  // What it does: starts the service and all its characteristics.
   // ------------------------------------------------------------
   void activarServicio( ) {
 	// entiendo que al llegar aquí ya ha sido configurado
@@ -281,6 +299,7 @@ public:
 
   // ------------------------------------------------------------
   // operator BLEService&() --> BLEService
+  // What it does: lets this object be used where Bluefruit expects a BLEService.
   // ------------------------------------------------------------
   operator BLEService&() {
 	// "conversión de tipo": si pongo esta clase en un sitio donde necesitan un BLEService

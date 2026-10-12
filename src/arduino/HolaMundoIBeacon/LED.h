@@ -20,6 +20,7 @@
 
 // ------------------------------------------------------------
 // tiempo: Z --> esperar() -->
+// What it does: pauses the program for 'tiempo' milliseconds.
 // ------------------------------------------------------------
 void esperar (long tiempo) {
   delay (tiempo);
@@ -27,6 +28,7 @@ void esperar (long tiempo) {
 
 // ----------------------------------------------------------
 // ----------------------------------------------------------
+// LED class: controls the small light on the board (on, off, blink).
 class LED {
 private:
   int numeroLED;
@@ -35,6 +37,7 @@ public:
 
   // ------------------------------------------------------------
   // numero: Z --> LED() -->
+  // What it does: creates the LED on pin 'numero' and starts it switched off.
   // ------------------------------------------------------------
   LED (int numero)
 	: numeroLED (numero), encendido(false)
@@ -45,6 +48,7 @@ public:
 
   // ------------------------------------------------------------
   // encender() -->
+  // What it does: turns the LED on.
   // ------------------------------------------------------------
   void encender () {
 	digitalWrite(numeroLED, HIGH); 
@@ -53,6 +57,7 @@ public:
 
   // ------------------------------------------------------------
   // apagar() -->
+  // What it does: turns the LED off.
   // ------------------------------------------------------------
   void apagar () {
 	  digitalWrite(numeroLED, LOW);
@@ -61,6 +66,7 @@ public:
 
   // ------------------------------------------------------------
   // alternar() -->
+  // What it does: if the LED is on it turns it off, if it is off it turns it on.
   // ------------------------------------------------------------
   void alternar () {
 	if (encendido) {
@@ -72,6 +78,7 @@ public:
 
   // ------------------------------------------------------------
   // tiempo: Z --> brillar() -->
+  // What it does: turns the LED on for 'tiempo' ms and then turns it off (one blink).
   // ------------------------------------------------------------
   void brillar (long tiempo) {
 	encender ();
