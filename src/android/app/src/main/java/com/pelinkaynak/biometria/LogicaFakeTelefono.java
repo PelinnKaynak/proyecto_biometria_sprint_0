@@ -13,6 +13,8 @@ package com.pelinkaynak.biometria;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+// LogicaFakeTelefono class: the phone's fake logic. It does not save anything itself:
+// it sends the measurement to the server with POST /guardarMedicion.
 public class LogicaFakeTelefono {
 
     // Dirección del servidor REST:
@@ -35,6 +37,8 @@ public class LogicaFakeTelefono {
     // Crea el JSON (sin Timestamp: lo genera el backend) y hace
     // POST /guardarMedicion. La respuesta del servidor (éxito o error) llega
     // por el callback.
+    // What it does: makes the JSON and sends it with POST to the server.
+    //               The callback receives true if the server answered 201, false if not.
     // -----------------------------------------------------------------------
     public void guardarMedicion(String UUID, int TipoMedicion, int ValorMedicion,
                                 final RespuestaGuardarMedicion respuesta) {
@@ -55,6 +59,7 @@ public class LogicaFakeTelefono {
 
     // -----------------------------------------------------------------------
     // UUID: Text, TipoMedicion: N, ValorMedicion: Z --> crearJSON() --> Text     (privado)
+    // What it does: builds {"UUID":..., "TipoMedicion":..., "ValorMedicion":...} (no Timestamp).
     // -----------------------------------------------------------------------
     static String crearJSON(String UUID, int TipoMedicion, int ValorMedicion)
             throws JSONException {
@@ -67,6 +72,7 @@ public class LogicaFakeTelefono {
 
     // -----------------------------------------------------------------------
     // codigo: Z --> esExito() --> T/F                                          (privado)
+    // What it does: returns true only if the answer code is 201 (saved).
     // -----------------------------------------------------------------------
     static boolean esExito(int codigo) {
         return codigo == CODIGO_EXITO;

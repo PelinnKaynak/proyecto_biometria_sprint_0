@@ -14,6 +14,7 @@ import java.util.Arrays;
 // -----------------------------------------------------------------------------------
 // @author: Jordi Bataller i Mascarell
 // -----------------------------------------------------------------------------------
+// TramaIBeacon class: cuts the bytes of an iBeacon packet into its parts (UUID, major, minor...).
 public class TramaIBeacon {
     private byte[] prefijo = null; // 9 bytes
     private byte[] uuid = null; // 16 bytes
@@ -31,6 +32,7 @@ public class TramaIBeacon {
 
     // ------------------------------------------------------------
     // getPrefijo() --> [Z]_9
+    // What it does: returns the first 9 bytes of the packet (flags, header, company, type, length).
     // ------------------------------------------------------------
     public byte[] getPrefijo() {
         return prefijo;
@@ -38,6 +40,7 @@ public class TramaIBeacon {
 
     // ------------------------------------------------------------
     // getUUID() --> [Z]_16
+    // What it does: returns the 16 bytes of the UUID (who sent the packet).
     // ------------------------------------------------------------
     public byte[] getUUID() {
         return uuid;
@@ -45,6 +48,7 @@ public class TramaIBeacon {
 
     // ------------------------------------------------------------
     // getMajor() --> [Z]_2
+    // What it does: returns the 2 bytes of major (measurement type + counter).
     // ------------------------------------------------------------
     public byte[] getMajor() {
         return major;
@@ -52,6 +56,7 @@ public class TramaIBeacon {
 
     // ------------------------------------------------------------
     // getMinor() --> [Z]_2
+    // What it does: returns the 2 bytes of minor (the measured value).
     // ------------------------------------------------------------
     public byte[] getMinor() {
         return minor;
@@ -59,6 +64,7 @@ public class TramaIBeacon {
 
     // ------------------------------------------------------------
     // getTxPower() --> Z
+    // What it does: returns the txPower byte (signal power sent by the board).
     // ------------------------------------------------------------
     public byte getTxPower() {
         return txPower;
@@ -66,6 +72,7 @@ public class TramaIBeacon {
 
     // ------------------------------------------------------------
     // getLosBytes() --> [Z]
+    // What it does: returns the whole packet, without cutting.
     // ------------------------------------------------------------
     public byte[] getLosBytes() {
         return losBytes;
@@ -73,6 +80,7 @@ public class TramaIBeacon {
 
     // ------------------------------------------------------------
     // getAdvFlags() --> [Z]_3
+    // What it does: returns the 3 advertising flag bytes.
     // ------------------------------------------------------------
     public byte[] getAdvFlags() {
         return advFlags;
@@ -80,6 +88,7 @@ public class TramaIBeacon {
 
     // ------------------------------------------------------------
     // getAdvHeader() --> [Z]_2
+    // What it does: returns the 2 advertising header bytes.
     // ------------------------------------------------------------
     public byte[] getAdvHeader() {
         return advHeader;
@@ -87,6 +96,7 @@ public class TramaIBeacon {
 
     // ------------------------------------------------------------
     // getCompanyID() --> [Z]_2
+    // What it does: returns the 2 company ID bytes (4C 00 = Apple).
     // ------------------------------------------------------------
     public byte[] getCompanyID() {
         return companyID;
@@ -94,6 +104,7 @@ public class TramaIBeacon {
 
     // ------------------------------------------------------------
     // getiBeaconType() --> Z
+    // What it does: returns the iBeacon type byte (02).
     // ------------------------------------------------------------
     public byte getiBeaconType() {
         return iBeaconType;
@@ -101,6 +112,7 @@ public class TramaIBeacon {
 
     // ------------------------------------------------------------
     // getiBeaconLength() --> Z
+    // What it does: returns the iBeacon length byte (0x15 = 21).
     // ------------------------------------------------------------
     public byte getiBeaconLength() {
         return iBeaconLength;
@@ -108,6 +120,8 @@ public class TramaIBeacon {
 
     // ------------------------------------------------------------
     // bytes: [Z] --> TramaIBeacon() -->
+    // What it does: receives the raw packet and cuts it into its parts
+    //               (bytes 0-8 prefix, 9-24 UUID, 25-26 major, 27-28 minor, 29 txPower).
     // ------------------------------------------------------------
     public TramaIBeacon(byte[] bytes ) {
         this.losBytes = bytes;

@@ -17,10 +17,12 @@ import java.util.UUID;
 // -----------------------------------------------------------------------------------
 // @author: Jordi Bataller i Mascarell
 // -----------------------------------------------------------------------------------
+// Utilidades class: toolbox of static functions to convert bytes, text and UUIDs.
 public class Utilidades {
 
     // ------------------------------------------------------------
     // texto: Text --> stringToBytes() --> [Z]
+    // What it does: converts a text into bytes ("EPSG" -> [69, 80, 83, 71]). Not used in Sprint 0.
     // ------------------------------------------------------------
     public static byte[] stringToBytes ( String texto ) {
         return texto.getBytes();
@@ -29,6 +31,7 @@ public class Utilidades {
 
     // ------------------------------------------------------------
     // uuid: Text --> stringToUUID() --> UUID
+    // What it does: converts a 16-character text into a Java UUID object. Not used in Sprint 0.
     // ------------------------------------------------------------
     public static UUID stringToUUID( String uuid ) {
         if ( uuid.length() != 16 ) {
@@ -49,6 +52,7 @@ public class Utilidades {
 
     // ------------------------------------------------------------
     // uuid: UUID --> uuidToString() --> Text
+    // What it does: converts a Java UUID object back into text. Not used in Sprint 0.
     // ------------------------------------------------------------
     public static String uuidToString ( UUID uuid ) {
         return bytesToString( dosLongToBytes( uuid.getMostSignificantBits(), uuid.getLeastSignificantBits() ) );
@@ -56,6 +60,7 @@ public class Utilidades {
 
     // ------------------------------------------------------------
     // uuid: UUID --> uuidToHexString() --> Text
+    // What it does: converts a Java UUID object into hex text. Not used in Sprint 0.
     // ------------------------------------------------------------
     public static String uuidToHexString ( UUID uuid ) {
         return bytesToHexString( dosLongToBytes( uuid.getMostSignificantBits(), uuid.getLeastSignificantBits() ) );
@@ -63,6 +68,7 @@ public class Utilidades {
 
     // ------------------------------------------------------------
     // bytes: [Z] --> bytesToString() --> Text
+    // What it does: converts bytes into text, one letter per byte. Used to read the UUID.
     // ------------------------------------------------------------
     public static String bytesToString( byte[] bytes ) {
         if (bytes == null ) {
@@ -78,6 +84,7 @@ public class Utilidades {
 
     // ------------------------------------------------------------
     // masSignificativos: Z, menosSignificativos: Z --> dosLongToBytes() --> [Z]
+    // What it does: puts two long numbers (8 + 8 bytes) into one array of 16 bytes.
     // ------------------------------------------------------------
     public static byte[] dosLongToBytes( long masSignificativos, long menosSignificativos ) {
         ByteBuffer buffer = ByteBuffer.allocate( 2 * Long.BYTES );
@@ -88,6 +95,7 @@ public class Utilidades {
 
     // ------------------------------------------------------------
     // bytes: [Z] --> bytesToInt() --> Z   (con signo)
+    // What it does: converts bytes into a signed number ([0x00, 0x7B] -> 123). Used to read minor.
     // ------------------------------------------------------------
     public static int bytesToInt( byte[] bytes ) {
         return new BigInteger(bytes).intValue();
@@ -95,6 +103,7 @@ public class Utilidades {
 
     // ------------------------------------------------------------
     // bytes: [Z] --> bytesToLong() --> Z
+    // What it does: same as bytesToInt but returns a long (up to 8 bytes).
     // ------------------------------------------------------------
     public static long bytesToLong( byte[] bytes ) {
         return new BigInteger(bytes).longValue();
@@ -102,6 +111,7 @@ public class Utilidades {
 
     // ------------------------------------------------------------
     // bytes: [Z] --> bytesToIntOK() --> Z
+    // What it does: bytesToInt written by hand, byte by byte. Not used in Sprint 0.
     // ------------------------------------------------------------
     public static int bytesToIntOK( byte[] bytes ) {
         if (bytes == null ) {
@@ -141,6 +151,7 @@ public class Utilidades {
 
     // ------------------------------------------------------------
     // bytes: [Z] --> bytesToHexString() --> Text
+    // What it does: converts bytes into hex text ([11, 5] -> "0b:05:"). Used only for the logs.
     // ------------------------------------------------------------
     public static String bytesToHexString( byte[] bytes ) {
 

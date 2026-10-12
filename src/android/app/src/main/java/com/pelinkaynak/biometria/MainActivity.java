@@ -37,6 +37,8 @@ import java.util.List;
 import java.util.UUID;
 
 
+// MainActivity class: the main screen. It scans Bluetooth, reads the packets of our board
+// and sends each new measurement to the server with LogicaFakeTelefono.
 public class MainActivity extends AppCompatActivity {
 
 
@@ -63,6 +65,7 @@ public class MainActivity extends AppCompatActivity {
 
     // ------------------------------------------------------------
     // buscarTodosLosDispositivosBTLE() -->
+    // What it does: scans ALL the Bluetooth devices around and only writes them in the log.
     // ------------------------------------------------------------
     private void buscarTodosLosDispositivosBTLE() {
         Log.d(ETIQUETA_LOG, " buscarTodosLosDispositivosBTL(): empieza ");
@@ -114,6 +117,7 @@ public class MainActivity extends AppCompatActivity {
 
     // ------------------------------------------------------------
     // resultado: ScanResult --> mostrarInformacionDispositivoBTLE() -->
+    // What it does: writes in the log all the details of a found packet (name, rssi, UUID, major, minor...).
     // ------------------------------------------------------------
     private void mostrarInformacionDispositivoBTLE(ScanResult resultado) {
 
@@ -178,6 +182,8 @@ public class MainActivity extends AppCompatActivity {
 
     // ------------------------------------------------------------
     // dispositivoBuscado: Text --> buscarEsteDispositivoBTLE() -->
+    // What it does: scans only the device with this name ("GTI3A-2025"). For each packet:
+    //               writes it in the log and processes it with procesarTramaDetectada().
     // ------------------------------------------------------------
     private void buscarEsteDispositivoBTLE(final String dispositivoBuscado) {
         Log.d(ETIQUETA_LOG, " buscarEsteDispositivoBTLE(): empieza ");
@@ -232,7 +238,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         Log.d(ETIQUETA_LOG, " buscarEsteDispositivoBTLE(): empieztar scan");
-        this.elEscanner.startScan(this.callbackDelEscaneo);
+        // (NUEVO) eliminado el startScan() sin filtro que había aquí: con el
+        // mismo callback Android rechaza el segundo startScan() y el filtro
+        // por nombre no se llegaba a aplicar
+        // this.elEscanner.startScan(this.callbackDelEscaneo);
 
         ScanSettings settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
 
@@ -255,6 +264,8 @@ public class MainActivity extends AppCompatActivity {
     // minor = valor) con TramaIBeacon y Utilidades y, si la trama es de
     // nuestro beacon y trae un contador nuevo, envía UUID, TipoMedicion y
     // ValorMedicion al servidor con laLogica.guardarMedicion().
+    // What it does: if the packet is from our board and has a new counter, gets type (major byte 1),
+    //               counter (major byte 2) and value (minor) and sends them to the server.
     // --------------------------------------------------------------
     private void procesarTramaDetectada(ScanResult resultado) {
         TramaIBeacon trama = new TramaIBeacon(resultado.getScanRecord().getBytes());
@@ -284,6 +295,7 @@ public class MainActivity extends AppCompatActivity {
 
     // ------------------------------------------------------------
     // detenerBusquedaDispositivosBTLE() -->
+    // What it does: stops the current scan.
     // ------------------------------------------------------------
     private void detenerBusquedaDispositivosBTLE() {
 
@@ -313,6 +325,7 @@ public class MainActivity extends AppCompatActivity {
 
     // ------------------------------------------------------------
     // v: View --> botonBuscarDispositivosBTLEPulsado() -->
+    // What it does: button 'search all devices' -> buscarTodosLosDispositivosBTLE().
     // ------------------------------------------------------------
     public void botonBuscarDispositivosBTLEPulsado(View v) {
         Log.d(ETIQUETA_LOG, " boton buscar dispositivos BTLE Pulsado");
@@ -321,6 +334,7 @@ public class MainActivity extends AppCompatActivity {
 
     // ------------------------------------------------------------
     // v: View --> botonBuscarNuestroDispositivoBTLEPulsado() -->
+    // What it does: button 'search our device' -> scans "GTI3A-2025" and sends its measurements.
     // ------------------------------------------------------------
     public void botonBuscarNuestroDispositivoBTLEPulsado(View v) {
         Log.d(ETIQUETA_LOG, " boton nuestro dispositivo BTLE Pulsado");
@@ -335,6 +349,7 @@ public class MainActivity extends AppCompatActivity {
 
     // ------------------------------------------------------------
     // v: View --> botonDetenerBusquedaDispositivosBTLEPulsado() -->
+    // What it does: button 'stop' -> stops the scan.
     // ------------------------------------------------------------
     public void botonDetenerBusquedaDispositivosBTLEPulsado(View v) {
         Log.d(ETIQUETA_LOG, " boton detener busqueda dispositivos BTLE Pulsado");
@@ -343,6 +358,8 @@ public class MainActivity extends AppCompatActivity {
 
     // ------------------------------------------------------------
     // inicializarBlueTooth() -->
+    // What it does: asks for the Bluetooth permissions if they are missing; when it has them,
+    //               turns on Bluetooth and gets the scanner.
     // ------------------------------------------------------------
     @SuppressLint("MissingPermission") // (NUEVO) los permisos se comprueban con tienePermisosBluetooth()
     private void inicializarBlueTooth() {
@@ -483,6 +500,8 @@ public class MainActivity extends AppCompatActivity {
     // true si la app puede escanear y conectar por Bluetooth
     // (permisos BLUETOOTH_SCAN y BLUETOOTH_CONNECT, que existen
     // desde Android 12; en versiones anteriores devuelve true)
+    // What it does: returns true if the app has the BLUETOOTH_SCAN and BLUETOOTH_CONNECT permissions
+    //               (always true before Android 12).
     // ------------------------------------------------------------
     private boolean tienePermisosBluetooth() {
         if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S) {
@@ -494,6 +513,7 @@ public class MainActivity extends AppCompatActivity {
 
     // ------------------------------------------------------------
     // savedInstanceState: Bundle --> onCreate() -->
+    // What it does: runs when the app opens: shows the screen, creates the logic and prepares Bluetooth.
     // ------------------------------------------------------------
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -512,6 +532,8 @@ public class MainActivity extends AppCompatActivity {
 
     // ------------------------------------------------------------
     // requestCode: Z, permissions: [Text], grantResults: [Z] --> onRequestPermissionsResult() -->
+    // What it does: Android calls it with the user's answer to the permissions;
+    //               if they were given, prepares Bluetooth again to get the scanner.
     // ------------------------------------------------------------
     public void onRequestPermissionsResult(int requestCode, String[] permissions,
                                            int[] grantResults) {

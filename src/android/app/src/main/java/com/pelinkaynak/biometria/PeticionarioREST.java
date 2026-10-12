@@ -22,6 +22,8 @@ import android.util.Log;
 
 // ------------------------------------------------------------------------
 // ------------------------------------------------------------------------
+// PeticionarioREST class: the 'postman'. Sends one HTTP request to the server in the
+// background and gives back the answer (code and body) through a callback.
 public class PeticionarioREST extends AsyncTask<Void, Void, Boolean> {
 
     // --------------------------------------------------------------------
@@ -44,6 +46,7 @@ public class PeticionarioREST extends AsyncTask<Void, Void, Boolean> {
     // metodo: Text, urlDestino: Text, cuerpo: Text --> hacerPeticionREST() -->
     // (la respuesta ( codigo: Z, cuerpo: Text ) llega por el callback,
     //  que se omite en la notación)
+    // What it does: saves method, URL, body and callback, and starts the request in another thread.
     // --------------------------------------------------------------------
     public void hacerPeticionREST (String metodo, String urlDestino, String cuerpo, RespuestaREST  laRespuesta) {
         this.elMetodo = metodo;
@@ -56,6 +59,7 @@ public class PeticionarioREST extends AsyncTask<Void, Void, Boolean> {
 
     // --------------------------------------------------------------------
     // PeticionarioREST() -->
+    // What it does: creates the postman (only writes a log).
     // --------------------------------------------------------------------
     public PeticionarioREST() {
         Log.d("clienterestandroid", "constructor()");
@@ -63,6 +67,8 @@ public class PeticionarioREST extends AsyncTask<Void, Void, Boolean> {
 
     // --------------------------------------------------------------------
     // doInBackground() --> T/F          (privado: lo llama AsyncTask en otro hilo)
+    // What it does: (background thread) opens the connection, sends the body if it is not GET,
+    //               reads the answer code and body. Returns true if the server answered.
     // --------------------------------------------------------------------
     @Override
     protected Boolean doInBackground(Void... params) {
@@ -143,6 +149,7 @@ public class PeticionarioREST extends AsyncTask<Void, Void, Boolean> {
 
     // --------------------------------------------------------------------
     // comoFue: T/F --> onPostExecute() -->   (privado: lo llama AsyncTask al terminar)
+    // What it does: (main thread, at the end) calls the callback with the answer code and body.
     // --------------------------------------------------------------------
     protected void onPostExecute(Boolean comoFue) {
         // llamado tras doInBackground()
