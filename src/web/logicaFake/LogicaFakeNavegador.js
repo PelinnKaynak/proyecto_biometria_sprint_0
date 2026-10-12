@@ -8,6 +8,9 @@
 // Copyright:   (c) 2026 Pelin Kaynak - Proyecto Biometría y Medio Ambiente, EPSG-UPV
 // ---------------------------------------------------------------------------
 
+// LogicaFakeNavegador class: the browser's fake logic. It does not read the database itself:
+// it asks the server with GET /recuperarUltimaMedicion.
+
 class LogicaFakeNavegador {
   // -------------------------------------------------------------------------
   // recuperarMedicion() --> JSON( UUID: Text, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )
@@ -16,6 +19,8 @@ class LogicaFakeNavegador {
   // Hace GET /recuperarUltimaMedicion al mismo servidor que sirvió la página.
   // 200 -> la medición · 404 -> null (todavía no hay mediciones)
   // otro código o fallo de red -> Error
+  // What it does: asks the server for the last measurement. Returns the measurement (200),
+  //               null if there is none yet (404), or throws an error (other code or no connection).
   // -------------------------------------------------------------------------
   async recuperarMedicion() {
     let respuesta

@@ -16,8 +16,10 @@
 </head>
 <body>
   <main>
+    <!-- Title of the page -->
     <h1>Última Medición</h1>
 
+    <!-- Box with the 4 values of the last measurement. ux.js fills each <span> by its id -->
     <div id="contenedorMedicion">
       <p>UUID: <span id="UUID">–</span></p>
       <p>Timestamp: <span id="Timestamp">–</span></p>
@@ -25,11 +27,14 @@
       <p>ValorMedicion: <span id="ValorMedicion">–</span></p>
     </div>
 
+    <!-- Button that asks the server for the last measurement (connected in ux.js) -->
     <button id="botonActualizar" type="button">Actualizar</button>
 
+    <!-- Red message, hidden until there is an error or no measurement yet -->
     <p id="mensajeError" hidden></p>
   </main>
 
+  <!-- Scripts at the end: first the fake logic (ux.js uses it), then ux.js -->
   <script src="logicaFake/LogicaFakeNavegador.js"></script>
   <script src="ux.js"></script>
 </body>
