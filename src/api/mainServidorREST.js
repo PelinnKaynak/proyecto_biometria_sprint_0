@@ -15,6 +15,8 @@ const NOMBRE_BD = process.env.NOMBRE_BD || 'mediciones.db'
 
 // ---------------------------------------------------------------------------
 // main() -->
+// What it does: starts the server (port 8080, mediciones.db) and, when Ctrl+C is pressed,
+//               stops it cleanly before exiting.
 // ---------------------------------------------------------------------------
 async function main() {
   await arrancarServidor(PUERTO, NOMBRE_BD)

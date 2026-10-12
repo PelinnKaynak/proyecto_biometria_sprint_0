@@ -15,12 +15,14 @@ const sqlite3 = require('sqlite3')
 const SCRIPT_CREACION = path.join(__dirname, '..', 'basedatos', 'crearBaseDeDatos.sql')
 const TIPOS_VALIDOS = [11, 12, 13] // CO2, TEMPERATURA, RUIDO
 
+// LogicaDeNegocio class: the only part of the server that reads and writes the database.
 class LogicaDeNegocio {
   #laConexion = null
   #baseDeDatosAbierta = null
 
   // -------------------------------------------------------------------------
   // nombreBD: Text --> LogicaDeNegocio() -->
+  // What it does: opens the database file (in the background) and remembers the 'ready' promise.
   // -------------------------------------------------------------------------
   constructor(nombreBD) {
     this.#baseDeDatosAbierta = this.#abrirBaseDeDatos(nombreBD)
@@ -30,6 +32,7 @@ class LogicaDeNegocio {
   // nombreBD: Text --> abrirBaseDeDatos() -->          (privado)
   //
   // Abre la conexión y crea la tabla Mediciones si no existe.
+  // What it does: opens (or creates) the database file and runs crearBaseDeDatos.sql.
   // -------------------------------------------------------------------------
   #abrirBaseDeDatos(nombreBD) {
     return new Promise((resolver, rechazar) => {
@@ -46,6 +49,7 @@ class LogicaDeNegocio {
   //
   // Genera el Timestamp (ISO 8601, UTC) y guarda la medición.
   // Falla si faltan datos o si el tipo no es 11, 12 o 13.
+  // What it does: checks the data, adds the current time and INSERTs one row in Mediciones.
   // -------------------------------------------------------------------------
   async guardarMedicion(UUID, TipoMedicion, ValorMedicion) {
     if (typeof UUID !== 'string' || UUID.length === 0) {
@@ -75,6 +79,7 @@ class LogicaDeNegocio {
   //
   // Medicion = ( UUID: Text, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )
   // Devuelve null si la tabla está vacía.
+  // What it does: returns the newest row of Mediciones, or null if the table is empty.
   // -------------------------------------------------------------------------
   async recuperarUltimaMedicion() {
     await this.#baseDeDatosAbierta
@@ -91,6 +96,7 @@ class LogicaDeNegocio {
 
   // -------------------------------------------------------------------------
   // cerrar() -->
+  // What it does: closes the database connection (the file is not locked anymore).
   // -------------------------------------------------------------------------
   async cerrar() {
     await this.#baseDeDatosAbierta.catch(() => {})

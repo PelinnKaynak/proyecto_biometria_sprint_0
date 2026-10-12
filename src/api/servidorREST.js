@@ -8,6 +8,8 @@
 // Copyright:   (c) 2026 Pelin Kaynak - Proyecto Biometría y Medio Ambiente, EPSG-UPV
 // ---------------------------------------------------------------------------
 
+// servidorREST module: receives the HTTP requests, checks them, calls LogicaDeNegocio
+// and answers with a code and JSON. It also serves the web page (src/web).
 const path = require('path')
 const express = require('express')
 const { LogicaDeNegocio } = require('../logica/LogicaDeNegocio')
@@ -20,6 +22,7 @@ let elServidorHTTP = null
 
 // ---------------------------------------------------------------------------
 // cuerpo: JSON( UUID: Text, TipoMedicion: N, ValorMedicion: Z ) --> esMedicionEntranteValida() --> B
+// What it does: returns true if the body has a non-empty UUID, a type 11/12/13 and an integer value.
 // ---------------------------------------------------------------------------
 function esMedicionEntranteValida(cuerpo) {
   return (
@@ -38,6 +41,7 @@ function esMedicionEntranteValida(cuerpo) {
 // EXITO = 201 { resultado: "ok" }
 // ERROR = 400 (faltan datos o no son válidos) | 500 { error: Text }
 // El Timestamp no se recibe: lo genera la lógica del negocio.
+// What it does: (POST /guardarMedicion) checks the body and saves it: 201 ok, 400 bad data, 500 error.
 // ---------------------------------------------------------------------------
 async function rutaGuardarMedicion(peticion, respuesta) {
   const cuerpo = peticion.body
@@ -61,6 +65,7 @@ async function rutaGuardarMedicion(peticion, respuesta) {
 //
 // JSON  = 200
 // ERROR = 404 (todavía no hay mediciones) | 500 { error: Text }
+// What it does: (GET /recuperarUltimaMedicion) returns the last measurement: 200, 404 if none, 500 error.
 // ---------------------------------------------------------------------------
 async function rutaRecuperarUltimaMedicion(peticion, respuesta) {
   try {
@@ -78,6 +83,7 @@ async function rutaRecuperarUltimaMedicion(peticion, respuesta) {
 // error, peticion, respuesta, siguiente --> responderJSONMalFormado() -->
 //
 // Convierte un JSON mal formado en el cuerpo en una respuesta 400 en JSON.
+// What it does: if the body is broken JSON, answers 400 in JSON instead of an HTML error page.
 // ---------------------------------------------------------------------------
 function responderJSONMalFormado(error, peticion, respuesta, siguiente) {
   if (error.type === 'entity.parse.failed') {
@@ -88,6 +94,8 @@ function responderJSONMalFormado(error, peticion, respuesta, siguiente) {
 
 // ---------------------------------------------------------------------------
 // puerto: N, nombreBD: Text --> arrancarServidor() --> ServidorHTTP
+// What it does: creates the logic, sets the routes and the web folder, and listens on the port
+//               on all network addresses (0.0.0.0) so the phone can connect.
 // ---------------------------------------------------------------------------
 function arrancarServidor(puerto, nombreBD) {
   logica = new LogicaDeNegocio(nombreBD)
@@ -107,6 +115,7 @@ function arrancarServidor(puerto, nombreBD) {
 
 // ---------------------------------------------------------------------------
 // pararServidor() -->
+// What it does: stops listening and closes the database.
 // ---------------------------------------------------------------------------
 async function pararServidor() {
   if (elServidorHTTP) {
