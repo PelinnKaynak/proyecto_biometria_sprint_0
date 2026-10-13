@@ -50,7 +50,7 @@ T *  alReves( T * p, int n ) {
 } // ()
 
 // ------------------------------------------------------------
-// texto: Text, tamanyo: N --> stringAUint8AlReves() --> [N]
+// pString: Text, pUint: [N], tamMax: N --> stringAUint8AlReves() --> [N]
 // What it does: copies a text into a byte array in reverse order (to build a BLE UUID).
 // ------------------------------------------------------------
 uint8_t * stringAUint8AlReves( const char * pString, uint8_t * pUint, int tamMax ) {
@@ -260,7 +260,7 @@ public:
   } // ()
   
   // ------------------------------------------------------------
-  // escribeUUID() -->
+  // escribeUUID() <--          (solo lee el estado)
   // What it does: prints the service UUID on the Serial Monitor (for debugging).
   // ------------------------------------------------------------
   void escribeUUID() {

@@ -2,7 +2,7 @@
 // Fichero:     PeticionarioREST.java
 // Descripción: Realiza una petición HTTP (REST) en segundo plano y entrega
 //              el código y el cuerpo de la respuesta mediante un callback.
-//              Diseño en doc/android_design.md.
+//              Diseño en doc/client_business_logic_design.md.
 // Autor:       Jordi Bataller i Mascarell (código original proporcionado)
 // Aportación:  Pelin Kaynak - cabeceras y diseño lógico (29/09/2026)
 // Copyright:   (c) Jordi Bataller i Mascarell - EPSG-UPV
@@ -43,9 +43,10 @@ public class PeticionarioREST extends AsyncTask<Void, Void, Boolean> {
     private String cuerpoRespuesta = "";
 
     // --------------------------------------------------------------------
-    // metodo: Text, urlDestino: Text, cuerpo: Text --> hacerPeticionREST() -->
-    // (la respuesta ( codigo: Z, cuerpo: Text ) llega por el callback,
-    //  que se omite en la notación)
+    // metodo: Text, urlDestino: Text, cuerpo: Text --> hacerPeticionREST() --> RespuestaREST
+    //
+    // RespuestaREST = ( codigo: Z, cuerpo: Text ). Se entrega al terminar
+    // mediante el callback laRespuesta (el callback se omite en la notación).
     // What it does: saves method, URL, body and callback, and starts the request in another thread.
     // --------------------------------------------------------------------
     public void hacerPeticionREST (String metodo, String urlDestino, String cuerpo, RespuestaREST  laRespuesta) {
@@ -66,7 +67,8 @@ public class PeticionarioREST extends AsyncTask<Void, Void, Boolean> {
     }
 
     // --------------------------------------------------------------------
-    // doInBackground() --> T/F          (privado: lo llama AsyncTask en otro hilo)
+    // doInBackground() --> B            (privado: lo llama AsyncTask en otro hilo;
+    //                                    en Java es protected porque sobrescribe AsyncTask)
     // What it does: (background thread) opens the connection, sends the body if it is not GET,
     //               reads the answer code and body. Returns true if the server answered.
     // --------------------------------------------------------------------
@@ -148,7 +150,7 @@ public class PeticionarioREST extends AsyncTask<Void, Void, Boolean> {
     } // ()
 
     // --------------------------------------------------------------------
-    // comoFue: T/F --> onPostExecute() -->   (privado: lo llama AsyncTask al terminar)
+    // comoFue: B --> onPostExecute() -->   (privado: lo llama AsyncTask al terminar)
     // What it does: (main thread, at the end) calls the callback with the answer code and body.
     // --------------------------------------------------------------------
     protected void onPostExecute(Boolean comoFue) {

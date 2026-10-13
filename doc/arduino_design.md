@@ -26,18 +26,24 @@ TramaIBeacon = ( beaconUUID: UUID_16, major: N, minor: Z, txPower: Z )
 ```text
 Globales = ( elLED: LED, elPuerto: PuertoSerie, elPublicador: Publicador, elMedidor: Medidor )
 
-tiempo: Z --> esperar() -->
+Loop = ( cont: N )        (contador de vueltas de loop(), de 0 a 255)
 
-inicializarPlaquita() -->
+inicializarPlaquita()
 
-setup() -->              (espera el puerto serie, enciende la emisora, inicia el medidor)
+setup()              (espera el puerto serie, enciende la emisora, inicia el medidor)
 
-lucecitas() -->          (secuencia de parpadeos del LED)
+lucecitas()          (secuencia de parpadeos del LED)
 
-loop() -->               (cont := cont + 1; lucecitas(); valor := medirCO2(); publicarCO2(valor, cont, 10000))
+loop()               (cont := cont + 1; lucecitas(); valor := medirCO2(); publicarCO2(valor, cont, 10000))
 ```
 
-### Clase LED
+### Clase LED (`LED.h`)
+
+Función libre definida en `LED.h` (la usan todas las clases):
+
+```text
+tiempo: Z --> esperar()          (espera tiempo milisegundos)
+```
 
 ```text
                      --------- LED ------------------------------
@@ -148,6 +154,15 @@ loop() -->               (cont := cont + 1; lucecitas(); valor := medirCO2(); pu
                                    encenderEmisora() -->
                                    |
                                    |
+                                   encenderEmisora() -->      (2ª versión: además instala los callbacks de conexión)
+                                   |
+                                   |
+                                   instalarCallbackConexionEstablecida() -->
+                                   |
+                                   |
+                                   instalarCallbackConexionTerminada() -->
+                                   |
+                                   |
                                    detenerAnuncio() -->
                                    |
                                    |
@@ -166,6 +181,10 @@ loop() -->               (cont := cont + 1; lucecitas(); valor := medirCO2(); pu
                                    |
   servicio: ServicioEnEmisora  --> anyadirServicio() -->
                         B     <--  |
+                                   |
+                                   |
+  servicio: ServicioEnEmisora  --> anyadirServicioConSusCaracteristicas() -->
+                        B     <--  |      (1ª versión: sin características)
                                    |
                                    |
   servicio: ServicioEnEmisora  --> anyadirServicioConSusCaracteristicas() -->
@@ -205,6 +224,9 @@ loop() -->               (cont := cont + 1; lucecitas(); valor := medirCO2(); pu
                                    |
                                    activarServicio() -->
                                    |
+                                   |
+               BLEService     <--  operator BLEService&() <--
+                                   |
                                    ---------------------------------------------------------
 
                                    --------- Caracteristica -------------------------------
@@ -242,6 +264,9 @@ loop() -->               (cont := cont + 1; lucecitas(); valor := medirCO2(); pu
   N                           <--  |
                                    |
                                    |
+                                   instalarCallbackCaracteristicaEscrita() -->
+                                   |
+                                   |
                                    activar() -->
                                    |
                                    ---------------------------------------------------------
@@ -250,12 +275,10 @@ loop() -->               (cont := cont + 1; lucecitas(); valor := medirCO2(); pu
 Funciones auxiliares libres (en `ServicioEnEmisora.h`):
 
 ```text
-texto: Text, tamanyo: N --> stringAUint8AlReves() --> [ N ]
+pString: Text, pUint: [ N ], tamMax: N --> stringAUint8AlReves() --> [ N ]     (copia el texto al revés en pUint)
 
 p: [ T ], n: N --> alReves() --> [ T ]          (invierte el array)
 ```
-
-Además, `ServicioEnEmisora` tiene la conversión `operator BLEService&() --> BLEService` y `EmisoraBLE` tiene una segunda versión de `encenderEmisora()` que también instala los callbacks de conexión.
 
 ---
 
@@ -266,7 +289,9 @@ Además, `ServicioEnEmisora` tiene la conversión `operator BLEService&() --> BL
 - **Codificación de la trama:** `publicarCO2()` pone en `major` el tipo de medición en el byte alto y el contador en el byte bajo (`major = (CO2 << 8) + contador`), y el valor en `minor`. El teléfono tiene que deshacer esta codificación (ver `android_design.md`).
 - **Tiempo de emisión (cambio respecto al código original):** en `loop()` se llama a `publicarCO2(valor, cont, 10000)` en lugar de `1000`. Con 1 segundo de anuncio cada ~5 segundos (el resto lo ocupa `lucecitas()`) la placa no aparecía en *nRF Connect*; con 10 segundos se detecta sin problemas. Es el único cambio de lógica en el código proporcionado.
 - **UUID del beacon:** `EPSG-GTI-PROY-3A` (16 caracteres ASCII). El teléfono lo usa para reconocer *nuestro* beacon entre los demás.
-- **Callbacks:** los métodos `instalarCallbackConexionEstablecida()`, `instalarCallbackConexionTerminada()` e `instalarCallbackCaracteristicaEscrita()` reciben funciones de callback. Según la notación de la asignatura, los callbacks se omiten en el diseño lógico, por eso no aparecen como parámetros.
+- **Callbacks:** los métodos `instalarCallbackConexionEstablecida()`, `instalarCallbackConexionTerminada()`, `instalarCallbackCaracteristicaEscrita()` y la 2ª versión de `encenderEmisora()` reciben funciones de callback. Los métodos sí aparecen en las cajas, pero, según la notación de la asignatura, el callback se omite, por eso no tienen parámetros dibujados.
+- **Tipos externos (opacos):** `BLEService`, `BLECharacteristic`, `BLEConnection` y `BleSecurityMode` son tipos de la biblioteca Bluefruit (`BleSecurityMode` es un alias de `SecureMode_t`). `T` en `alReves()` significa "cualquier tipo" (función plantilla de C++).
+- **Funciones libres sin datos de salida:** `setup()`, `loop()`, `lucecitas()`, `inicializarPlaquita()` y `esperar()` no devuelven nada, por eso se escriben sin flecha de salida (sección 4 de la notación). En los métodos de las clases, la flecha de la derecha indica si cambian el estado (`-->`) o solo lo leen (`<--`).
 - **Conexión con otros componentes:** la única salida del componente es la trama iBeacon, que recibe el componente `android`.
 
 ---
@@ -275,9 +300,10 @@ Además, `ServicioEnEmisora` tiene la conversión `operator BLEService&() --> BL
 
 - **Lenguaje:** C++ para Arduino (núcleo *Adafruit nRF52*, biblioteca Bluefruit).
 - **Cabecera de fichero:** cada fichero empieza con un comentario que indica nombre del fichero, descripción, autor original (Jordi Bataller i Mascarell), aportación de Pelin Kaynak (diseño y documentación), fecha y copyright.
-- **Cabeceras de funciones/métodos:** cada función o método incluye su diseño lógico en un bloque de comentarios delimitado por líneas discontinuas (`--------------------`), con la notación de la asignatura.
+- **Cabeceras de funciones/métodos:** cada función o método incluye su diseño lógico en un bloque de comentarios delimitado por líneas discontinuas (`--------------------`), con la notación de la asignatura, y una línea breve en inglés `What it does:` dentro del mismo bloque.
 - **Legibilidad:** el código debe ser lo más claro y autoexplicativo posible, de forma que casi no necesite comentarios adicionales.
-- **Tests (criterio de aceptación reproducible):** en la placa no hay framework de tests automáticos. La prueba es:
+- **Tests automáticos:** en `src/arduino/test/`. El programa real de la placa (`HolaMundoIBeacon.ino` con todas sus clases) se compila en el ordenador con g++, sustituyendo Arduino y Bluefruit por un doble de prueba (`stubs/bluefruit.h`) que no emite nada y apunta lo que se le pide. `pruebasHolaMundoIBeacon.cpp` comprueba: `Medidor` (123 y −12), `LED` (encender, apagar, alternar, brillar), `PuertoSerie.escribir()`, `EmisoraBLE` (encender, nombre `GTI3A-2025`, txPower 4, fabricante 0x004C, intervalo, emitir y detener anuncio), `Publicador` (`major = (tipo << 8) + contador`, `minor = valor`, duración del anuncio y parada), `alReves()`, `stringAUint8AlReves()`, y `setup()`/`loop()` (contador, valor publicado y duración de una vuelta). Se ejecutan con `npm test` (`arduino.test.js`; se omiten si el ordenador no tiene g++).
+- **Prueba en la placa (criterio de aceptación):**
   1. Subir el programa y abrir el Monitor Serie (115200 baudios): aparece `---- loop(): empieza N` en cada iteración.
   2. Con la app *nRF Connect* en el teléfono se ve el dispositivo `GTI3A-2025` con UUID `EPSG-GTI-PROY-3A`, `major = 0x0B??` (11 en el byte alto) y `minor = 123`.
 - **Fidelidad al diseño:** no añadir clases ni funcionalidades que no aparezcan en este diseño.

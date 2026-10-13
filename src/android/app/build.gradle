@@ -26,6 +26,12 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+    // Lógica del negocio del cliente (componente src/client_business_logic,
+    // diseño en doc/client_business_logic_design.md)
+    sourceSets {
+        main { java.srcDirs += ['../../client_business_logic/java'] }
+        test { java.srcDirs += ['../../client_business_logic/test/java'] }
+    }
 }
 
 dependencies {

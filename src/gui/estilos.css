@@ -1,0 +1,151 @@
+/* ---------------------------------------------------------------------------
+   Fichero:     estilos.css
+   Descripción: Estilos de la UX del navegador (doc/gui_design.md).
+                Solo cambia el aspecto: la estructura (H1, DIV con 4 P,
+                botón y P de error) es la del diseño.
+   Autora:      Pelin Kaynak
+   Fecha:       06/10/2026
+   Copyright:   (c) 2026 Pelin Kaynak - Proyecto Biometría y Medio Ambiente, EPSG-UPV
+   --------------------------------------------------------------------------- */
+
+:root {
+  --verde: #2e7d5b;
+  --verde-oscuro: #1f5a41;
+  --verde-claro: #e6f2ec;
+  --fondo: #f3f7f5;
+  --texto: #1d2b25;
+  --texto-suave: #5b6b64;
+  --borde: #d3e3db;
+  --rojo: #b42318;
+  --rojo-claro: #fdecea;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: var(--texto);
+  background: linear-gradient(160deg, var(--verde-claro) 0%, var(--fondo) 45%, #ffffff 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+/* Tarjeta central que contiene toda la página */
+main {
+  width: 100%;
+  max-width: 30rem;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(31, 90, 65, 0.12);
+  padding: 2rem 1.75rem 1.75rem;
+  text-align: center;
+}
+
+/* Título (H1) */
+h1 {
+  margin: 0 0 1.5rem;
+  font-size: 1.6rem;
+  color: var(--verde-oscuro);
+  letter-spacing: 0.01em;
+}
+
+h1::after {
+  content: "";
+  display: block;
+  width: 3rem;
+  height: 4px;
+  margin: 0.6rem auto 0;
+  border-radius: 2px;
+  background: var(--verde);
+}
+
+/* Contenedor (DIV) con los datos de la medición */
+#contenedorMedicion {
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: 12px;
+  padding: 0.5rem 1.25rem;
+  text-align: left;
+}
+
+/* Cada dato (P): etiqueta a la izquierda, valor a la derecha */
+#contenedorMedicion p {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  margin: 0;
+  padding: 0.85rem 0;
+  color: var(--texto-suave);
+  font-size: 0.95rem;
+}
+
+#contenedorMedicion p + p {
+  border-top: 1px solid var(--borde);
+}
+
+#contenedorMedicion span {
+  font-weight: 600;
+  color: var(--texto);
+  text-align: right;
+  word-break: break-all;
+}
+
+/* El valor de la medición destaca más que el resto */
+#ValorMedicion {
+  font-size: 1.5rem;
+  color: var(--verde) !important;
+}
+
+/* Botón Actualizar, centrado */
+#botonActualizar {
+  display: block;
+  margin: 1.75rem auto 0;
+  padding: 0.8rem 2.4rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+  background: var(--verde);
+  border: none;
+  border-radius: 999px;
+  box-shadow: 0 4px 12px rgba(46, 125, 91, 0.35);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.15s, box-shadow 0.15s;
+}
+
+#botonActualizar:hover {
+  background: var(--verde-oscuro);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(31, 90, 65, 0.35);
+}
+
+#botonActualizar:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 6px rgba(31, 90, 65, 0.3);
+}
+
+#botonActualizar:focus-visible {
+  outline: 3px solid var(--verde-claro);
+  outline-offset: 3px;
+}
+
+/* Mensaje de error (P) */
+#mensajeError {
+  margin: 1.25rem 0 0;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  background: var(--rojo-claro);
+  color: var(--rojo);
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+#mensajeError[hidden] {
+  display: none;
+}

@@ -290,7 +290,17 @@ public class MainActivity extends AppCompatActivity {
                 + " ValorMedicion = " + valorMedicion + " contador = " + contador);
 
         this.laLogica.guardarMedicion(uuid, tipoMedicion, valorMedicion,
-                exito -> Log.d(ETIQUETA_LOG, " procesarTramaDetectada(): guardada en el servidor = " + exito));
+                new LogicaFakeTelefono.RespuestaGuardarMedicion() {
+                    @Override
+                    public void guardada() {
+                        Log.d(ETIQUETA_LOG, " procesarTramaDetectada(): guardada en el servidor = true");
+                    }
+
+                    @Override
+                    public void error(String mensaje) {
+                        Log.d(ETIQUETA_LOG, " procesarTramaDetectada(): guardada en el servidor = false (" + mensaje + ")");
+                    }
+                });
     } // ()
 
     // ------------------------------------------------------------

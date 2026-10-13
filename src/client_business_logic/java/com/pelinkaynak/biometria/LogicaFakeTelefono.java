@@ -3,7 +3,7 @@
 // Descripción: Lógica fake del teléfono. guardarMedicion() crea un JSON con
 //              UUID, TipoMedicion y ValorMedicion y lo envía con
 //              POST /guardarMedicion al servidor REST. No accede a la base de
-//              datos ni a la lógica del negocio. Diseño en doc/android_design.md.
+//              datos ni a la lógica del negocio. Diseño en doc/client_business_logic_design.md.
 // Autora:      Pelin Kaynak
 // Fecha:       30/09/2026
 // Copyright:   (c) 2026 Pelin Kaynak - Proyecto Biometría y Medio Ambiente, EPSG-UPV
@@ -25,28 +25,31 @@ public class LogicaFakeTelefono {
     private static final int CODIGO_EXITO = 201;
 
     // -----------------------------------------------------------------------
-    // Callback con el resultado de guardarMedicion(): T (éxito) / F (error)
+    // Callback de guardarMedicion() (se omite en la notación). Igual que en el
+    // backend: si todo va bien no devuelve nada (guardada()); si falla, avisa
+    // del error con un texto (error()), como la excepción del backend.
     // -----------------------------------------------------------------------
     public interface RespuestaGuardarMedicion {
-        void callback(boolean exito);
+        void guardada();
+        void error(String mensaje);
     }
 
     // -----------------------------------------------------------------------
-    // JSON( UUID: Text, TipoMedicion: N, ValorMedicion: Z ) --> guardarMedicion() -->
+    // uuid: Text, tipoMedicion: N, valorMedicion: Z --> guardarMedicion() -->
+    // (misma firma que LogicaDeNegocio.guardarMedicion() del backend)
     //
     // Crea el JSON (sin Timestamp: lo genera el backend) y hace
-    // POST /guardarMedicion. La respuesta del servidor (éxito o error) llega
-    // por el callback.
+    // POST /guardarMedicion. Al terminar llama a guardada() o a error().
     // What it does: makes the JSON and sends it with POST to the server.
-    //               The callback receives true if the server answered 201, false if not.
+    //               Calls guardada() if the server answered 201, error() if not.
     // -----------------------------------------------------------------------
-    public void guardarMedicion(String UUID, int TipoMedicion, int ValorMedicion,
+    public void guardarMedicion(String uuid, int tipoMedicion, int valorMedicion,
                                 final RespuestaGuardarMedicion respuesta) {
         String cuerpo;
         try {
-            cuerpo = crearJSON(UUID, TipoMedicion, ValorMedicion);
+            cuerpo = crearJSON(uuid, tipoMedicion, valorMedicion);
         } catch (JSONException error) {
-            respuesta.callback(false);
+            respuesta.error("no se pudo crear el JSON: " + error.getMessage());
             return;
         }
 
@@ -54,24 +57,38 @@ public class LogicaFakeTelefono {
                 "POST",
                 URL_SERVIDOR + "/guardarMedicion",
                 cuerpo,
-                (codigo, cuerpoRespuesta) -> respuesta.callback(esExito(codigo)));
+                (codigo, cuerpoRespuesta) -> notificarResultado(codigo, cuerpoRespuesta, respuesta));
     }
 
     // -----------------------------------------------------------------------
-    // UUID: Text, TipoMedicion: N, ValorMedicion: Z --> crearJSON() --> Text     (privado)
+    // codigo: Z, cuerpoRespuesta: Text --> notificarResultado() -->         (privado, estático)
+    // (el callback respuesta se omite en la notación)
+    // What it does: calls guardada() if the code is 201, or error() with the code and body if not.
+    // -----------------------------------------------------------------------
+    static void notificarResultado(int codigo, String cuerpoRespuesta,
+                                   RespuestaGuardarMedicion respuesta) {
+        if (esExito(codigo)) {
+            respuesta.guardada();
+        } else {
+            respuesta.error("el servidor respondió " + codigo + " " + cuerpoRespuesta);
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // uuid: Text, tipoMedicion: N, valorMedicion: Z --> crearJSON() --> Text     (privado, estático)
     // What it does: builds {"UUID":..., "TipoMedicion":..., "ValorMedicion":...} (no Timestamp).
     // -----------------------------------------------------------------------
-    static String crearJSON(String UUID, int TipoMedicion, int ValorMedicion)
+    static String crearJSON(String uuid, int tipoMedicion, int valorMedicion)
             throws JSONException {
         JSONObject json = new JSONObject();
-        json.put("UUID", UUID);
-        json.put("TipoMedicion", TipoMedicion);
-        json.put("ValorMedicion", ValorMedicion);
+        json.put("UUID", uuid);
+        json.put("TipoMedicion", tipoMedicion);
+        json.put("ValorMedicion", valorMedicion);
         return json.toString();
     }
 
     // -----------------------------------------------------------------------
-    // codigo: Z --> esExito() --> T/F                                          (privado)
+    // codigo: Z --> esExito() --> B                                            (privado, estático)
     // What it does: returns true only if the answer code is 201 (saved).
     // -----------------------------------------------------------------------
     static boolean esExito(int codigo) {

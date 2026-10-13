@@ -6,8 +6,8 @@
   "license": "UNLICENSED",
   "private": true,
   "scripts": {
-    "servidor": "node src/api/mainServidorREST.js",
-    "test": "mocha \"src/basedatos/test/**/*.test.js\" \"src/logica/test/**/*.test.js\" \"src/api/test/**/*.test.js\" \"src/web/test/**/*.test.js\""
+    "servidor": "node src/communication/mainServidorREST.js",
+    "test": "mocha \"src/arduino/test/**/*.test.js\" \"src/database/test/**/*.test.js\" \"src/business_logic/test/**/*.test.js\" \"src/communication/test/**/*.test.js\" \"src/frontend_business_logic/test/**/*.test.js\" \"src/gui/test/**/*.test.js\""
   },
   "engines": {
     "node": ">=20.19"

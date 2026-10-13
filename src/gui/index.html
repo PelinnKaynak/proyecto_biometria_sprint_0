@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<!--
+  Fichero:     index.html
+  Descripción: UX del navegador. Muestra la última medición guardada.
+               Diseño en doc/gui_design.md.
+  Autora:      Pelin Kaynak
+  Fecha:       30/09/2026
+  Copyright:   (c) 2026 Pelin Kaynak - Proyecto Biometría y Medio Ambiente, EPSG-UPV
+-->
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Última Medición</title>
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+  <main>
+    <!-- Title of the page -->
+    <h1>Última Medición</h1>
+
+    <!-- Box with the 4 values of the last measurement. ux.js fills each <span> by its id -->
+    <div id="contenedorMedicion">
+      <p>UUID: <span id="UUID">–</span></p>
+      <p>Timestamp: <span id="Timestamp">–</span></p>
+      <p>TipoMedicion: <span id="TipoMedicion">–</span></p>
+      <p>ValorMedicion: <span id="ValorMedicion">–</span></p>
+    </div>
+
+    <!-- Button that asks the server for the last measurement (connected in ux.js) -->
+    <button id="botonActualizar" type="button">Actualizar</button>
+
+    <!-- Red message, hidden until there is an error or no measurement yet -->
+    <p id="mensajeError" hidden></p>
+  </main>
+
+  <!-- Scripts at the end: first the fake logic (ux.js uses it), then ux.js -->
+  <script src="frontend_business_logic/LogicaFakeNavegador.js"></script>
+  <script src="ux.js"></script>
+</body>
+</html>

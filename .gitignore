@@ -4,7 +4,7 @@ npm-debug.log*
 
 # Bases de datos generadas en ejecución / tests
 *.db
-!src/basedatos/*.sql
+!src/database/*.sql
 
 # Android
 .gradle/

@@ -64,7 +64,7 @@ namespace Globales {
 }; // namespace
 
 // ------------------------------------------------------------
-// inicializarPlaquita() -->
+// inicializarPlaquita()
 // What it does: prepares the board. Empty for now.
 // ------------------------------------------------------------
 void inicializarPlaquita () {
@@ -76,7 +76,7 @@ void inicializarPlaquita () {
 // --------------------------------------------------------------
 // setup()
 // ------------------------------------------------------------
-// setup() -->   (espera el puerto serie, enciende la emisora e inicia el medidor)
+// setup()   (espera el puerto serie, enciende la emisora e inicia el medidor)
 // What it does: runs ONCE when the board starts: waits for the serial port, turns on
 //               Bluetooth, prepares the meter and waits 1 second.
 // ------------------------------------------------------------
@@ -114,7 +114,7 @@ void setup() {
 } // setup ()
 
 // ------------------------------------------------------------
-// lucecitas() -->   (secuencia de parpadeos del LED)
+// lucecitas()   (secuencia de parpadeos del LED)
 // What it does: LED show (short, short, short, long) = 'a new round starts'. Takes 3.5 s.
 // ------------------------------------------------------------
 inline void lucecitas() {
@@ -139,7 +139,7 @@ namespace Loop {
 };
 
 // ------------------------------------------------------------
-// loop() -->   (cont := cont + 1; lucecitas(); valor := medirCO2(); publicarCO2(valor, cont, 10000))
+// loop()   (cont := cont + 1; lucecitas(); valor := medirCO2(); publicarCO2(valor, cont, 10000))
 // What it does: runs FOREVER: counter + 1, LED show, measure CO2 (123) and broadcast it
 //               for 10 seconds. One round takes about 13.5 s.
 // ------------------------------------------------------------

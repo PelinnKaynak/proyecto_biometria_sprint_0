@@ -8,7 +8,7 @@ Sistema distribuido que lleva una medición ambiental desde un sensor hasta un n
 
 ```
 Arduino (C++)  --BLE iBeacon-->  Teléfono Android (Java)  --POST REST-->  Servidor (Node.js)
-                                                                            |  api  -> logica -> basedatos (SQLite)
+                                                                            |  communication -> business_logic -> database (SQLite)
 Navegador (HTML/JS)  <--GET REST--------------------------------------------'
 ```
 
@@ -24,12 +24,15 @@ Navegador (HTML/JS)  <--GET REST--------------------------------------------'
 | Carpeta | Contenido | Diseño |
 |---|---|---|
 | `doc/` | Diseños de cada componente (`xxx_design.md`) | – |
-| `src/arduino/` | Programa de la placa (C++) | `doc/arduino_design.md` |
-| `src/android/` | App Android (Java) | `doc/android_design.md` |
-| `src/basedatos/` | Script SQL de la base de datos | `doc/basedatos_design.md` |
-| `src/logica/` | Lógica del negocio (Node.js) | `doc/logica_design.md` |
-| `src/api/` | Servidor REST (Node.js + Express) | `doc/api_design.md` |
-| `src/web/` | Lógica fake y UX del navegador (HTML/CSS/JS) | `doc/web_design.md` |
+| `src/arduino/` | Programa de la placa (C++) y sus tests | `doc/arduino_design.md` |
+| `src/android/` | App Android (Java): GUI del teléfono y escaneo BLE | `doc/android_design.md` |
+| `src/client_business_logic/` | Lógica del negocio del cliente Android (proxy al servidor) | `doc/client_business_logic_design.md` |
+| `src/database/` | Script SQL de la base de datos | `doc/database_design.md` |
+| `src/business_logic/` | Lógica del negocio del backend (Node.js) | `doc/business_logic_design.md` |
+| `src/communication/` | Servidor REST (Node.js + Express) | `doc/communication_design.md` |
+| `src/frontend_business_logic/` | Lógica del negocio del cliente web (proxy al servidor) | `doc/frontend_business_logic_design.md` |
+| `src/gui/` | Página web (HTML/CSS/JS) | `doc/gui_design.md` |
+| `referencia/` | Material de referencia de la asignatura (no son diseños) | – |
 
 ## Ramas
 
@@ -55,7 +58,7 @@ Abrir en el navegador: `http://localhost:8080/` (el servidor también sirve la p
 5. Comprobación: Monitor Serie a 115200 baudios y, en el móvil, la app **nRF Connect** debe mostrar el dispositivo `GTI3A-2025` con UUID `EPSG-GTI-PROY-3A`.
 
 ### Android
-Abrir `src/android/` con Android Studio, poner la IP del servidor en `URL_SERVIDOR` de `LogicaFakeTelefono.java` (emulador: `http://10.0.2.2:8080`; teléfono real: `http://<IPv4 del ordenador>:8080`) y ejecutar en un teléfono real con Bluetooth.
+Abrir `src/android/` con Android Studio, poner la IP del servidor en `URL_SERVIDOR` de `src/client_business_logic/java/com/pelinkaynak/biometria/LogicaFakeTelefono.java` (emulador: `http://10.0.2.2:8080`; teléfono real: `http://<IPv4 del ordenador>:8080`) y ejecutar en un teléfono real con Bluetooth.
 
 ## API REST
 
@@ -64,11 +67,11 @@ Abrir `src/android/` con Android Studio, poner la IP del servidor en `URL_SERVID
 | `POST /guardarMedicion` | `{"UUID": "EPSG-GTI-PROY-3A", "TipoMedicion": 11, "ValorMedicion": 123}` | `201` éxito · `400` / `500` error |
 | `GET /recuperarUltimaMedicion` | – | `200` `{"UUID": "EPSG-GTI-PROY-3A", "Timestamp": "2026-09-30T10:15:30.000Z", "TipoMedicion": 11, "ValorMedicion": 123}` · `404` / `500` error |
 
-El `Timestamp` lo genera el servidor al guardar. Detalles en `doc/api_design.md`.
+El `Timestamp` lo genera el servidor al guardar. Detalles en `doc/communication_design.md`.
 
 ## Tests
 
 ```bash
-npm test               # tests automáticos de basedatos, logica, api y web (mocha)
+npm test               # tests automáticos de arduino (si hay g++), database, business_logic, communication, frontend_business_logic y gui (mocha)
 ```
-Tests de Android (JUnit): en `src/android/` ejecutar `./gradlew test`.
+Tests de Android (JUnit, incluye `src/client_business_logic/test/`): en `src/android/` ejecutar `./gradlew test`.
