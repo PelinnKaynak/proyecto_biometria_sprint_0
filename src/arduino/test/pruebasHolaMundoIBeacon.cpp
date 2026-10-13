@@ -90,15 +90,15 @@ static void pruebaPuertoSerie() {
 static void pruebaEmisoraBLE() {
   printf("EmisoraBLE\n");
   reiniciarDoble();
-  EmisoraBLE emisora("GTI3A-2025", 0x004c, 4);
+  EmisoraBLE emisora("PelinIBeacon", 0x004c, 4);
   emisora.encenderEmisora();
   comprobar(Bluefruit.encendido, "encenderEmisora() enciende el Bluetooth");
   comprobar(!emisora.estaAnunciando(), "al encender no se está anunciando");
 
-  uint8_t uuid[16] = { 'E','P','S','G','-','G','T','I','-','P','R','O','Y','-','3','A' };
+  uint8_t uuid[16] = { 'E','P','S','G','-','G','T','I','-','P','E','L','I','N', 0x00, 0x01 };
   emisora.emitirAnuncioIBeacon(uuid, 0x0B05, 123, -53);
   comprobar(emisora.estaAnunciando(), "emitirAnuncioIBeacon() empieza a anunciar");
-  comprobar(Bluefruit.nombre == "GTI3A-2025", "el nombre de la emisora es GTI3A-2025");
+  comprobar(Bluefruit.nombre == "PelinIBeacon", "el nombre de la emisora es PelinIBeacon");
   comprobar(Bluefruit.potencia == 4, "txPower es 4");
   comprobar(Bluefruit.Advertising.ultimoBeacon.fabricante == 0x004c, "fabricante 0x004C (Apple)");
   comprobar(Bluefruit.Advertising.intervaloMin == 100 && Bluefruit.Advertising.intervaloMax == 100,
@@ -110,7 +110,7 @@ static void pruebaEmisoraBLE() {
 
 // ------------------------------------------------------------
 // pruebaPublicador()
-// What it does: checks major = (type << 8) + counter, minor = value, duration and stop.
+// What it does: checks UUID (project + IdSensor), major = (type << 8) + counter, minor = value, duration and stop.
 // ------------------------------------------------------------
 static void pruebaPublicador() {
   printf("Publicador\n");
@@ -120,7 +120,8 @@ static void pruebaPublicador() {
 
   publicador.publicarCO2(123, 5, 10000);
   BLEBeacon & beacon = Bluefruit.Advertising.ultimoBeacon;
-  comprobar(memcmp(beacon.uuid, "EPSG-GTI-PROY-3A", 16) == 0, "UUID EPSG-GTI-PROY-3A");
+  comprobar(memcmp(beacon.uuid, "EPSG-GTI-PELIN", 14) == 0, "los 14 primeros bytes del UUID son EPSG-GTI-PELIN");
+  comprobar(beacon.uuid[14] == 0 && beacon.uuid[15] == 1, "los 2 últimos bytes del UUID son IdSensor = 1");
   comprobar(beacon.major == ((11 << 8) + 5), "publicarCO2: major = (CO2 << 8) + contador");
   comprobar(beacon.minor == 123, "publicarCO2: minor = valor");
   comprobar(Doble::tiempoEsperado == 10000, "publicarCO2 anuncia durante tiempoEspera");

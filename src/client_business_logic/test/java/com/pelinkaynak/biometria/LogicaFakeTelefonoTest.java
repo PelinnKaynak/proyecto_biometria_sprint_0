@@ -20,14 +20,15 @@ import org.junit.Test;
 public class LogicaFakeTelefonoTest {
 
     // ------------------------------------------------------------
-    // elJSONTieneUUIDTipoMedicionYValorMedicionSinTimestamp() -->
-    // What it does: checks the JSON has UUID, TipoMedicion and ValorMedicion and no Timestamp.
+    // elJSONTieneIdSensorTipoMedicionYValorMedicionSinTimestamp() -->
+    // What it does: checks the JSON has IdSensor, TipoMedicion and ValorMedicion and no UUID or Timestamp.
     // ------------------------------------------------------------
     @Test
-    public void elJSONTieneUUIDTipoMedicionYValorMedicionSinTimestamp() throws Exception {
-        JSONObject json = new JSONObject(LogicaFakeTelefono.crearJSON("EPSG-GTI-PROY-3A", 11, 123));
+    public void elJSONTieneIdSensorTipoMedicionYValorMedicionSinTimestamp() throws Exception {
+        JSONObject json = new JSONObject(LogicaFakeTelefono.crearJSON(1, 11, 123));
 
-        assertEquals("EPSG-GTI-PROY-3A", json.getString("UUID"));
+        assertEquals(1, json.getInt("IdSensor"));
+        assertFalse(json.has("UUID"));
         assertEquals(11, json.getInt("TipoMedicion"));
         assertEquals(123, json.getInt("ValorMedicion"));
         assertEquals(3, json.length());
@@ -40,7 +41,7 @@ public class LogicaFakeTelefonoTest {
     // ------------------------------------------------------------
     @Test
     public void elJSONAdmiteValoresNegativos() throws Exception {
-        JSONObject json = new JSONObject(LogicaFakeTelefono.crearJSON("EPSG-GTI-PROY-3A", 12, -12));
+        JSONObject json = new JSONObject(LogicaFakeTelefono.crearJSON(1, 12, -12));
         assertEquals(-12, json.getInt("ValorMedicion"));
     }
 

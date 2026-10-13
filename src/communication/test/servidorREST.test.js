@@ -13,7 +13,7 @@ const os = require('os')
 const path = require('path')
 const { arrancarServidor, pararServidor } = require('../servidorREST')
 
-const MEDICION_CO2 = { UUID: 'EPSG-GTI-PROY-3A', TipoMedicion: 11, ValorMedicion: 123 }
+const MEDICION_CO2 = { IdSensor: 1, TipoMedicion: 11, ValorMedicion: 123 }
 
 // ---------------------------------------------------------------------------
 // url: Text, cuerpo: Text --> enviarPOST() --> Response
@@ -47,9 +47,17 @@ describe('communication: servidor REST', function () {
   })
 
   it('POST /guardarMedicion con datos que faltan -> 400', async function () {
-    const respuesta = await enviarPOST(`${urlBase}/guardarMedicion`, JSON.stringify({ UUID: 'x' }))
+    const respuesta = await enviarPOST(`${urlBase}/guardarMedicion`, JSON.stringify({ IdSensor: 1 }))
     assert.strictEqual(respuesta.status, 400)
     assert.ok((await respuesta.json()).error)
+  })
+
+  it('POST /guardarMedicion sin IdSensor (con UUID) o con IdSensor negativo -> 400', async function () {
+    const conUUID = JSON.stringify({ UUID: 'EPSG-GTI-PROY-3A', TipoMedicion: 11, ValorMedicion: 123 })
+    assert.strictEqual((await enviarPOST(`${urlBase}/guardarMedicion`, conUUID)).status, 400)
+
+    const negativo = JSON.stringify({ ...MEDICION_CO2, IdSensor: -1 })
+    assert.strictEqual((await enviarPOST(`${urlBase}/guardarMedicion`, negativo)).status, 400)
   })
 
   it('POST /guardarMedicion con tipo no válido -> 400', async function () {
@@ -77,7 +85,8 @@ describe('communication: servidor REST', function () {
     assert.strictEqual(respuesta.status, 200)
 
     const medicion = await respuesta.json()
-    assert.strictEqual(medicion.UUID, MEDICION_CO2.UUID)
+    assert.strictEqual(medicion.IdSensor, MEDICION_CO2.IdSensor)
+    assert.strictEqual(medicion.UUID, undefined)
     assert.strictEqual(medicion.TipoMedicion, MEDICION_CO2.TipoMedicion)
     assert.strictEqual(medicion.ValorMedicion, MEDICION_CO2.ValorMedicion)
     assert.ok(!isNaN(new Date(medicion.Timestamp)), 'debe incluir un timestamp válido')

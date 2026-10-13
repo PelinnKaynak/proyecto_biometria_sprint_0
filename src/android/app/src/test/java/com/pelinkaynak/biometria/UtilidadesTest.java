@@ -18,12 +18,12 @@ import org.junit.Test;
 public class UtilidadesTest {
 
     // ------------------------------------------------------------
-    // bytesToStringLeeElUUIDDeNuestraPlaca() -->
-    // What it does: checks bytes -> text gives "EPSG-GTI-PROY-3A" (and "" for null).
+    // bytesToStringConvierteCadaByteEnUnCaracter() -->
+    // What it does: checks each byte becomes one character ("EPSG-GTI-PELIN") and null gives "".
     // ------------------------------------------------------------
     @Test
-    public void bytesToStringLeeElUUIDDeNuestraPlaca() {
-        assertEquals("EPSG-GTI-PROY-3A", Utilidades.bytesToString("EPSG-GTI-PROY-3A".getBytes()));
+    public void bytesToStringConvierteCadaByteEnUnCaracter() {
+        assertEquals("EPSG-GTI-PELIN", Utilidades.bytesToString("EPSG-GTI-PELIN".getBytes()));
         assertEquals("", Utilidades.bytesToString(null));
     }
 

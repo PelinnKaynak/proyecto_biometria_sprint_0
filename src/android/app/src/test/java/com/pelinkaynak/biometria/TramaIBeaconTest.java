@@ -17,11 +17,11 @@ public class TramaIBeaconTest {
 
     // ------------------------------------------------------------
     // tramaDeNuestraPlaca() --> [Z]_30
-    // What it does: builds the 30 bytes our board sends for CO2 = 123, counter = 5.
+    // What it does: builds the 30 bytes our board sends for IdSensor = 1, CO2 = 123, counter = 5.
     // ------------------------------------------------------------
     static byte[] tramaDeNuestraPlaca() {
         byte[] prefijo = { 0x02, 0x01, 0x06, 0x1A, (byte) 0xFF, 0x4C, 0x00, 0x02, 0x15 };
-        byte[] uuid = "EPSG-GTI-PROY-3A".getBytes();
+        byte[] uuid = { 'E', 'P', 'S', 'G', '-', 'G', 'T', 'I', '-', 'P', 'E', 'L', 'I', 'N', 0x00, 0x01 };
         byte[] resto = { 0x0B, 0x05, 0x00, 0x7B, (byte) 0xCB };
 
         byte[] trama = new byte[30];
@@ -33,13 +33,15 @@ public class TramaIBeaconTest {
 
     // ------------------------------------------------------------
     // separaUUIDMajorMinorYTxPower() -->
-    // What it does: checks UUID, major, minor and txPower are cut from the right bytes.
+    // What it does: checks UUID (project prefix + IdSensor), major, minor and txPower are cut from the right bytes.
     // ------------------------------------------------------------
     @Test
     public void separaUUIDMajorMinorYTxPower() {
         TramaIBeacon trama = new TramaIBeacon(tramaDeNuestraPlaca());
 
-        assertArrayEquals("EPSG-GTI-PROY-3A".getBytes(), trama.getUUID());
+        byte[] uuid = trama.getUUID();
+        assertArrayEquals("EPSG-GTI-PELIN".getBytes(), java.util.Arrays.copyOfRange(uuid, 0, 14));
+        assertArrayEquals(new byte[] { 0x00, 0x01 }, java.util.Arrays.copyOfRange(uuid, 14, 16)); // IdSensor = 1
         assertArrayEquals(new byte[] { 0x0B, 0x05 }, trama.getMajor());
         assertArrayEquals(new byte[] { 0x00, 0x7B }, trama.getMinor());
         assertEquals((byte) 0xCB, trama.getTxPower());

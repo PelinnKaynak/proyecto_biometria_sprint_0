@@ -22,22 +22,22 @@ let logica = null // instancia privada de LogicaDeNegocio (solo la usa este mód
 let elServidorHTTP = null
 
 // ---------------------------------------------------------------------------
-// cuerpo: JSON( UUID: Text, TipoMedicion: N, ValorMedicion: Z ) --> esMedicionEntranteValida() --> B
-// What it does: returns true if the body has a non-empty UUID, a type 11/12/13 and an integer value.
+// cuerpo: JSON( IdSensor: N, TipoMedicion: N, ValorMedicion: Z ) --> esMedicionEntranteValida() --> B
+// What it does: returns true if the body has a natural IdSensor, a type 11/12/13 and an integer value.
 // ---------------------------------------------------------------------------
 function esMedicionEntranteValida(cuerpo) {
   return (
     cuerpo !== null &&
     typeof cuerpo === 'object' &&
-    typeof cuerpo.UUID === 'string' &&
-    cuerpo.UUID.length > 0 &&
+    Number.isInteger(cuerpo.IdSensor) &&
+    cuerpo.IdSensor >= 0 &&
     TIPOS_VALIDOS.includes(cuerpo.TipoMedicion) &&
     Number.isInteger(cuerpo.ValorMedicion)
   )
 }
 
 // ---------------------------------------------------------------------------
-// JSON( UUID: Text, TipoMedicion: N, ValorMedicion: Z ) --> POST /guardarMedicion --> EXITO | ERROR
+// JSON( IdSensor: N, TipoMedicion: N, ValorMedicion: Z ) --> POST /guardarMedicion --> EXITO | ERROR
 //
 // EXITO = 201 { resultado: "ok" }
 // ERROR = 400 (faltan datos o no son válidos) | 500 { error: Text }
@@ -48,12 +48,12 @@ async function rutaGuardarMedicion(peticion, respuesta) {
   const cuerpo = peticion.body
   if (!esMedicionEntranteValida(cuerpo)) {
     return respuesta.status(400).json({
-      error: 'se necesita UUID (texto), TipoMedicion (11, 12 o 13) y ValorMedicion (entero)',
+      error: 'se necesita IdSensor (natural), TipoMedicion (11, 12 o 13) y ValorMedicion (entero)',
     })
   }
 
   try {
-    await logica.guardarMedicion(cuerpo.UUID, cuerpo.TipoMedicion, cuerpo.ValorMedicion)
+    await logica.guardarMedicion(cuerpo.IdSensor, cuerpo.TipoMedicion, cuerpo.ValorMedicion)
     respuesta.status(201).json({ resultado: 'ok' })
   } catch (error) {
     respuesta.status(500).json({ error: `no se pudo guardar la medición: ${error.message}` })
@@ -61,7 +61,7 @@ async function rutaGuardarMedicion(peticion, respuesta) {
 }
 
 // ---------------------------------------------------------------------------
-// GET /recuperarUltimaMedicion --> JSON( UUID: Text, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )
+// GET /recuperarUltimaMedicion --> JSON( IdSensor: N, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )
 //                                | ERROR
 //
 // JSON  = 200

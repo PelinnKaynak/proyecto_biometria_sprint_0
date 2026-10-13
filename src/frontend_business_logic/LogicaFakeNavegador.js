@@ -15,7 +15,7 @@ class LogicaFakeNavegador {
   // -------------------------------------------------------------------------
   // recuperarUltimaMedicion() --> Medicion | vacío
   //
-  // Medicion = ( UUID: Text, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )
+  // Medicion = ( IdSensor: N, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )
   // (misma firma que LogicaDeNegocio.recuperarUltimaMedicion() del backend)
   // Hace GET /recuperarUltimaMedicion al mismo servidor que sirvió la página.
   // 200 -> la medición · 404 -> null (todavía no hay mediciones)

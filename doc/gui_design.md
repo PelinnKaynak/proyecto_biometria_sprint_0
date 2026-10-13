@@ -17,7 +17,7 @@ GUI (index.html + ux.js)  -->  LogicaFakeNavegador.recuperarUltimaMedicion()
 ### Tipos
 
 ```text
-Medicion = ( UUID: Text, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )
+Medicion = ( IdSensor: N, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )
 ```
 
 ### Pantalla
@@ -27,7 +27,7 @@ Medicion = ( UUID: Text, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )
 |  H1  Título: "Última Medición"                   |
 |                                                  |
 |  +-- DIV Contenedor (contenedorMedicion) ------+ |
-|  |  P  UUID:           Text                    | |
+|  |  P  IdSensor:       N                       | |
 |  |  P  Timestamp:      Text                    | |
 |  |  P  TipoMedicion:   N                       | |
 |  |  P  ValorMedicion:  Z                       | |
@@ -59,8 +59,9 @@ mensaje: Text --> mostrarError()
 
 - **Botón:** cuando el usuario lo pulsa, `botonActualizarPulsado()` llama a `recuperarUltimaMedicion()` de la lógica fake; si hay medición, llama a `mostrarMedicion()`; si es vacío, muestra el mensaje *"Todavía no hay mediciones"*; si hay error, llama a `mostrarError()` con su texto.
 - **mostrarMedicion():** escribe los cuatro datos en los párrafos del contenedor y oculta el mensaje de error. Para que el usuario los entienda, el `Timestamp` se muestra como fecha y hora local (ej. `06/10/2026, 11:52:54`) y el `TipoMedicion` con su nombre (`11` → `CO2`, `12` → `Temperatura`, `13` → `Ruido`); un tipo desconocido se muestra con su número. Los datos no cambian: solo cambia cómo se muestran.
+- **Varios sensores:** la página muestra la última medición de cualquier sensor; la fila `IdSensor` indica de qué sensor es.
 - **mostrarError():** escribe el texto en el párrafo de error y lo hace visible.
-- **HTML:** cada `<p>` del contenedor tiene la etiqueta fija y un `<span>` con id (`UUID`, `Timestamp`, `TipoMedicion`, `ValorMedicion`) donde se escribe el dato. El botón tiene id `botonActualizar` y el párrafo de error id `mensajeError` (atributo `hidden` cuando no hay error).
+- **HTML:** cada `<p>` del contenedor tiene la etiqueta fija y un `<span>` con id (`IdSensor`, `Timestamp`, `TipoMedicion`, `ValorMedicion`) donde se escribe el dato. El botón tiene id `botonActualizar` y el párrafo de error id `mensajeError` (atributo `hidden` cuando no hay error).
 - **Carga de scripts:** al final del `<body>`, primero `frontend_business_logic/LogicaFakeNavegador.js` y después `ux.js`.
 - **Separación de capas:** la GUI nunca usa `fetch` ni conoce las rutas del servidor ni la base de datos.
 - **Ficheros:** `src/gui/index.html`, `src/gui/estilos.css`, `src/gui/ux.js`. El servidor los sirve en la ruta `/`.

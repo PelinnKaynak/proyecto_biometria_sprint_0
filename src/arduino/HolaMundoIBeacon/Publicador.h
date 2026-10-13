@@ -19,23 +19,31 @@
 
 // --------------------------------------------------------------
 // --------------------------------------------------------------
-// Publicador class: prepares the measurement (UUID, major, minor) and asks EmisoraBLE to send it.
+// Publicador class: prepares the measurement (UUID with the sensor id, major, minor) and asks EmisoraBLE to send it.
 class Publicador {
 
   // ............................................................
   // ............................................................
 private:
 
+  // (NUEVO) número del sensor de esta placa (0..65535). Cada placa del
+  // proyecto tiene que tener uno distinto. Va en los 2 últimos bytes del UUID.
+  static const uint16_t ID_SENSOR = 1;
+
+  // (NUEVO) los 14 primeros bytes identifican las placas de este proyecto
+  // ("EPSG-GTI-PELIN"; antes "EPSG-GTI-PROY-", igual para toda la clase);
+  // los 2 últimos son ID_SENSOR (byte alto, byte bajo). Antes eran '3', 'A'.
   uint8_t beaconUUID[16] = { 
 	'E', 'P', 'S', 'G', '-', 'G', 'T', 'I', 
-	'-', 'P', 'R', 'O', 'Y', '-', '3', 'A'
+	'-', 'P', 'E', 'L', 'I', 'N',
+	(uint8_t) (ID_SENSOR >> 8), (uint8_t) (ID_SENSOR & 0xFF)
 	};
 
   // ............................................................
   // ............................................................
 public:
   EmisoraBLE laEmisora {
-	"GTI3A-2025", //  nombre emisora
+	"PelinIBeacon", //  nombre emisora  (NUEVO: antes "GTI3A-2025", igual para toda la clase)
 	//"GTI-3A", //  OK
 	  0x004c, // fabricanteID (Apple)
 	  4 // txPower

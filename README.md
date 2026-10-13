@@ -55,7 +55,7 @@ Abrir en el navegador: `http://localhost:8080/` (el servidor también sirve la p
 2. Gestor de placas → instalar **Adafruit nRF52 by Adafruit**.
 3. Añadir la definición de la placa SparkFun Pro nRF52840 Mini siguiendo el [tutorial de SparkFun](https://learn.sparkfun.com/tutorials/nrf52840-development-with-arduino-and-circuitpython) (ficheros en `%LOCALAPPDATA%\Arduino15\packages\adafruit\hardware\nrf52\<versión>`).
 4. Abrir `src/arduino/HolaMundoIBeacon/HolaMundoIBeacon.ino`, elegir la placa *SparkFun Pro nRF52840 Mini* y el puerto, y subir.
-5. Comprobación: Monitor Serie a 115200 baudios y, en el móvil, la app **nRF Connect** debe mostrar el dispositivo `GTI3A-2025` con UUID `EPSG-GTI-PROY-3A`.
+5. Comprobación: Monitor Serie a 115200 baudios y, en el móvil, la app **nRF Connect** debe mostrar el dispositivo `PelinIBeacon` con un UUID que empieza por `EPSG-GTI-PELIN` (los 2 últimos bytes son el número del sensor, `IdSensor`).
 
 ### Android
 Abrir `src/android/` con Android Studio, poner la IP del servidor en `URL_SERVIDOR` de `src/client_business_logic/java/com/pelinkaynak/biometria/LogicaFakeTelefono.java` (emulador: `http://10.0.2.2:8080`; teléfono real: `http://<IPv4 del ordenador>:8080`) y ejecutar en un teléfono real con Bluetooth.
@@ -64,8 +64,8 @@ Abrir `src/android/` con Android Studio, poner la IP del servidor en `URL_SERVID
 
 | Ruta | Petición | Respuesta |
 |---|---|---|
-| `POST /guardarMedicion` | `{"UUID": "EPSG-GTI-PROY-3A", "TipoMedicion": 11, "ValorMedicion": 123}` | `201` éxito · `400` / `500` error |
-| `GET /recuperarUltimaMedicion` | – | `200` `{"UUID": "EPSG-GTI-PROY-3A", "Timestamp": "2026-09-30T10:15:30.000Z", "TipoMedicion": 11, "ValorMedicion": 123}` · `404` / `500` error |
+| `POST /guardarMedicion` | `{"IdSensor": 1, "TipoMedicion": 11, "ValorMedicion": 123}` | `201` éxito · `400` / `500` error |
+| `GET /recuperarUltimaMedicion` | – | `200` `{"IdSensor": 1, "Timestamp": "2026-09-30T10:15:30.000Z", "TipoMedicion": 11, "ValorMedicion": 123}` · `404` / `500` error |
 
 El `Timestamp` lo genera el servidor al guardar. Detalles en `doc/communication_design.md`.
 

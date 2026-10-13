@@ -16,7 +16,7 @@ const { JSDOM } = require('jsdom')
 const HTML = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8')
 const CODIGO_UX = fs.readFileSync(path.join(__dirname, '..', 'ux.js'), 'utf8')
 
-const MEDICION = { UUID: 'EPSG-GTI-PROY-3A', Timestamp: '2026-09-29T10:15:30.000Z', TipoMedicion: 11, ValorMedicion: 123 }
+const MEDICION = { IdSensor: 1, Timestamp: '2026-09-29T10:15:30.000Z', TipoMedicion: 11, ValorMedicion: 123 }
 
 // ---------------------------------------------------------------------------
 // respuestaDelDoble: Medicion | vacío | Error --> crearPagina() --> PaginaDePrueba
@@ -98,7 +98,7 @@ describe('gui: UX del navegador', function () {
     await pulsarBoton(ventana)
     const documento = ventana.document
 
-    assert.strictEqual(documento.getElementById('UUID').textContent, 'EPSG-GTI-PROY-3A')
+    assert.strictEqual(documento.getElementById('IdSensor').textContent, '1')
     const fechaEsperada = new Date(MEDICION.Timestamp).toLocaleString('es-ES', {
       day: '2-digit', month: '2-digit', year: 'numeric',
       hour: '2-digit', minute: '2-digit', second: '2-digit',

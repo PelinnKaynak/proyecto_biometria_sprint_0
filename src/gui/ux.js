@@ -45,7 +45,7 @@ async function botonActualizarPulsado() {
 // ---------------------------------------------------------------------------
 // medicion: Medicion --> mostrarMedicion()
 //
-// Medicion = ( UUID: Text, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )
+// Medicion = ( IdSensor: N, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )
 //
 // Para el usuario: el Timestamp se muestra como fecha y hora local y el
 // TipoMedicion con su nombre (11 -> CO2). Un tipo desconocido se muestra
@@ -56,7 +56,7 @@ function mostrarMedicion(medicion) {
   const fechaLocal = new Date(medicion.Timestamp).toLocaleString('es-ES', FORMATO_FECHA)
   const nombreTipo = NOMBRES_TIPO_MEDICION[medicion.TipoMedicion] || medicion.TipoMedicion
 
-  document.getElementById('UUID').textContent = medicion.UUID
+  document.getElementById('IdSensor').textContent = medicion.IdSensor
   document.getElementById('Timestamp').textContent = fechaLocal
   document.getElementById('TipoMedicion').textContent = nombreTipo
   document.getElementById('ValorMedicion').textContent = medicion.ValorMedicion

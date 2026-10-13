@@ -33,7 +33,10 @@ import android.util.Log;
 import android.view.View;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 
@@ -48,8 +51,10 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int CODIGO_PETICION_PERMISOS = 11223344;
 
-    // (NUEVO) UUID que emite nuestra placa Arduino
-    private static final String UUID_NUESTRO_BEACON = "EPSG-GTI-PROY-3A";
+    // (NUEVO) los 14 primeros bytes del UUID de las placas de este proyecto
+    // (propios, para no confundirlas con las de otros grupos, que emiten
+    // "EPSG-GTI-PROY-3A"); los 2 últimos bytes son el número del sensor (IdSensor)
+    private static final String PREFIJO_UUID_NUESTROS_BEACONS = "EPSG-GTI-PELIN";
 
     // --------------------------------------------------------------
     // --------------------------------------------------------------
@@ -60,8 +65,9 @@ public class MainActivity extends AppCompatActivity {
     // (NUEVO)
     private LogicaFakeTelefono laLogica;
 
-    // (NUEVO) evita enviar varias veces la misma trama repetida
-    private int ultimoContadorEnviado = -1;
+    // (NUEVO) último contador enviado de cada sensor (IdSensor -> contador):
+    // evita enviar varias veces la misma trama repetida
+    private final Map<Integer, Integer> ultimoContadorPorSensor = new HashMap<>();
 
     // ------------------------------------------------------------
     // buscarTodosLosDispositivosBTLE() -->
@@ -182,7 +188,7 @@ public class MainActivity extends AppCompatActivity {
 
     // ------------------------------------------------------------
     // dispositivoBuscado: Text --> buscarEsteDispositivoBTLE() -->
-    // What it does: scans only the device with this name ("GTI3A-2025"). For each packet:
+    // What it does: scans only the device with this name ("PelinIBeacon"). For each packet:
     //               writes it in the log and processes it with procesarTramaDetectada().
     // ------------------------------------------------------------
     private void buscarEsteDispositivoBTLE(final String dispositivoBuscado) {
@@ -260,36 +266,41 @@ public class MainActivity extends AppCompatActivity {
     // --------------------------------------------------------------
     // resultado: ScanResult --> procesarTramaDetectada() -->          (NUEVO)
     //
-    // Deshace la codificación del Arduino (major = tipo * 256 + contador,
-    // minor = valor) con TramaIBeacon y Utilidades y, si la trama es de
-    // nuestro beacon y trae un contador nuevo, envía UUID, TipoMedicion y
+    // Deshace la codificación del Arduino (UUID = prefijo + IdSensor,
+    // major = tipo * 256 + contador, minor = valor) con TramaIBeacon y
+    // Utilidades y, si la trama es de una placa del proyecto y trae un
+    // contador nuevo para ese sensor, envía IdSensor, TipoMedicion y
     // ValorMedicion al servidor con laLogica.guardarMedicion().
-    // What it does: if the packet is from our board and has a new counter, gets type (major byte 1),
-    //               counter (major byte 2) and value (minor) and sends them to the server.
+    // What it does: if the packet is from one of our boards and has a new counter for that sensor,
+    //               gets the sensor id (last 2 UUID bytes), type (major byte 1), counter (major byte 2)
+    //               and value (minor) and sends them to the server.
     // --------------------------------------------------------------
     private void procesarTramaDetectada(ScanResult resultado) {
         TramaIBeacon trama = new TramaIBeacon(resultado.getScanRecord().getBytes());
 
-        String uuid = Utilidades.bytesToString(trama.getUUID());
-        if (!UUID_NUESTRO_BEACON.equals(uuid)) {
-            Log.d(ETIQUETA_LOG, " procesarTramaDetectada(): no es nuestro beacon, UUID = " + uuid);
+        byte[] uuid = trama.getUUID();
+        String prefijo = Utilidades.bytesToString(Arrays.copyOfRange(uuid, 0, 14));
+        if (!PREFIJO_UUID_NUESTROS_BEACONS.equals(prefijo)) {
+            Log.d(ETIQUETA_LOG, " procesarTramaDetectada(): no es nuestro beacon, UUID = " + Utilidades.bytesToString(uuid));
             return;
         }
+        int idSensor = ((uuid[14] & 0xFF) << 8) | (uuid[15] & 0xFF); // 2 últimos bytes del UUID
 
         byte[] major = trama.getMajor();
         int tipoMedicion = major[0] & 0xFF;                          // byte alto de major
         int contador = major[1] & 0xFF;                              // byte bajo de major
         int valorMedicion = Utilidades.bytesToInt(trama.getMinor()); // minor
 
-        if (contador == this.ultimoContadorEnviado) {
-            return; // la misma trama repetida: ya se envió
+        Integer ultimoContador = this.ultimoContadorPorSensor.get(idSensor);
+        if (ultimoContador != null && ultimoContador == contador) {
+            return; // la misma trama repetida de este sensor: ya se envió
         }
-        this.ultimoContadorEnviado = contador;
+        this.ultimoContadorPorSensor.put(idSensor, contador);
 
-        Log.d(ETIQUETA_LOG, " procesarTramaDetectada(): envío TipoMedicion = " + tipoMedicion
-                + " ValorMedicion = " + valorMedicion + " contador = " + contador);
+        Log.d(ETIQUETA_LOG, " procesarTramaDetectada(): envío IdSensor = " + idSensor
+                + " TipoMedicion = " + tipoMedicion + " ValorMedicion = " + valorMedicion + " contador = " + contador);
 
-        this.laLogica.guardarMedicion(uuid, tipoMedicion, valorMedicion,
+        this.laLogica.guardarMedicion(idSensor, tipoMedicion, valorMedicion,
                 new LogicaFakeTelefono.RespuestaGuardarMedicion() {
                     @Override
                     public void guardada() {
@@ -344,14 +355,14 @@ public class MainActivity extends AppCompatActivity {
 
     // ------------------------------------------------------------
     // v: View --> botonBuscarNuestroDispositivoBTLEPulsado() -->
-    // What it does: button 'search our device' -> scans "GTI3A-2025" and sends its measurements.
+    // What it does: button 'search our device' -> scans "PelinIBeacon" and sends its measurements.
     // ------------------------------------------------------------
     public void botonBuscarNuestroDispositivoBTLEPulsado(View v) {
         Log.d(ETIQUETA_LOG, " boton nuestro dispositivo BTLE Pulsado");
         //this.buscarEsteDispositivoBTLE( Utilidades.stringToUUID( "EPSG-GTI-PROY-3A" ) );
 
         //this.buscarEsteDispositivoBTLE("EPSG-GTI-PROY-3A");
-        this.buscarEsteDispositivoBTLE("GTI3A-2025" );
+        this.buscarEsteDispositivoBTLE("PelinIBeacon" );
         //this.buscarEsteDispositivoBTLE("GTI");
         //this.buscarEsteDispositivoBTLE( "fistro" );
 

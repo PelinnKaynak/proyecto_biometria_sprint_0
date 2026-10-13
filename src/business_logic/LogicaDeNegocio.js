@@ -45,15 +45,15 @@ class LogicaDeNegocio {
   }
 
   // -------------------------------------------------------------------------
-  // uuid: Text, tipoMedicion: N, valorMedicion: Z --> guardarMedicion() -->
+  // idSensor: N, tipoMedicion: N, valorMedicion: Z --> guardarMedicion() -->
   //
   // Genera el Timestamp (ISO 8601, UTC) y guarda la medición.
   // Falla si faltan datos o si el tipo no es 11, 12 o 13.
   // What it does: checks the data, adds the current time and INSERTs one row in Mediciones.
   // -------------------------------------------------------------------------
-  async guardarMedicion(uuid, tipoMedicion, valorMedicion) {
-    if (typeof uuid !== 'string' || uuid.length === 0) {
-      throw new Error('UUID debe ser un texto no vacío')
+  async guardarMedicion(idSensor, tipoMedicion, valorMedicion) {
+    if (!Number.isInteger(idSensor) || idSensor < 0) {
+      throw new Error('IdSensor debe ser un número natural')
     }
     if (!TIPOS_VALIDOS.includes(tipoMedicion)) {
       throw new Error(`TipoMedicion no válido: ${tipoMedicion}`)
@@ -67,8 +67,8 @@ class LogicaDeNegocio {
 
     return new Promise((resolver, rechazar) => {
       this.#laConexion.run(
-        'INSERT INTO Mediciones (UUID, Timestamp, TipoMedicion, ValorMedicion) VALUES (?, ?, ?, ?)',
-        [uuid, timestamp, tipoMedicion, valorMedicion],
+        'INSERT INTO Mediciones (IdSensor, Timestamp, TipoMedicion, ValorMedicion) VALUES (?, ?, ?, ?)',
+        [idSensor, timestamp, tipoMedicion, valorMedicion],
         (error) => (error ? rechazar(error) : resolver())
       )
     })
@@ -77,7 +77,7 @@ class LogicaDeNegocio {
   // -------------------------------------------------------------------------
   // recuperarUltimaMedicion() --> Medicion | vacío
   //
-  // Medicion = ( UUID: Text, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )
+  // Medicion = ( IdSensor: N, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )
   // Devuelve null si la tabla está vacía.
   // What it does: returns the newest row of Mediciones, or null if the table is empty.
   // -------------------------------------------------------------------------
@@ -88,7 +88,7 @@ class LogicaDeNegocio {
       this.#laConexion.get(
         // id (clave primaria, creciente) desempata dos mediciones
         // guardadas en el mismo milisegundo.
-        'SELECT UUID, Timestamp, TipoMedicion, ValorMedicion FROM Mediciones ORDER BY Timestamp DESC, id DESC LIMIT 1',
+        'SELECT IdSensor, Timestamp, TipoMedicion, ValorMedicion FROM Mediciones ORDER BY Timestamp DESC, id DESC LIMIT 1',
         (error, fila) => (error ? rechazar(error) : resolver(fila ?? null))
       )
     })

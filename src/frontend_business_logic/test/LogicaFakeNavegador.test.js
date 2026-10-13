@@ -59,16 +59,16 @@ describe('frontend_business_logic: LogicaFakeNavegador', function () {
     assert.strictEqual(await new LogicaFakeNavegador().recuperarUltimaMedicion(), null)
   })
 
-  it('devuelve el JSON con UUID, Timestamp, TipoMedicion y ValorMedicion', async function () {
+  it('devuelve la Medicion con IdSensor, Timestamp, TipoMedicion y ValorMedicion', async function () {
     await fetchOriginal(`${urlBase}/guardarMedicion`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ UUID: 'EPSG-GTI-PROY-3A', TipoMedicion: 11, ValorMedicion: 123 }),
+      body: JSON.stringify({ IdSensor: 1, TipoMedicion: 11, ValorMedicion: 123 }),
     })
 
     const medicion = await new LogicaFakeNavegador().recuperarUltimaMedicion()
 
-    assert.strictEqual(medicion.UUID, 'EPSG-GTI-PROY-3A')
+    assert.strictEqual(medicion.IdSensor, 1)
     assert.strictEqual(medicion.TipoMedicion, 11)
     assert.strictEqual(medicion.ValorMedicion, 123)
     assert.ok(medicion.Timestamp)

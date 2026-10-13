@@ -15,7 +15,7 @@ Regla del subconjunto: la GUI solo necesita consultar la última medición, así
 ```text
 TipoMedicion = { CO2 = 11, TEMPERATURA = 12, RUIDO = 13 }
 
-Medicion = ( UUID: Text, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )
+Medicion = ( IdSensor: N, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )
 ```
 
 ### Clase LogicaFakeNavegador
@@ -54,5 +54,5 @@ Firma idéntica a la del backend:
 - **Cabecera de fichero:** cada fichero empieza con un comentario que indica nombre del fichero, descripción, autora (Pelin Kaynak), fecha y copyright.
 - **Cabeceras de funciones/métodos:** cada función o método incluye su diseño lógico en un bloque de comentarios delimitado por líneas discontinuas (`--------------------`), con la notación de la asignatura, y una línea breve en inglés `What it does:` dentro del mismo bloque.
 - **Legibilidad:** el código debe ser lo más claro y autoexplicativo posible (nombres descriptivos en castellano), de forma que casi no necesite comentarios adicionales.
-- **Tests automáticos:** con mocha, en `src/frontend_business_logic/test/`, contra el servidor REST real arrancado con una base de datos temporal. Comprueban que `recuperarUltimaMedicion()` llama a `GET /recuperarUltimaMedicion`, que devuelve vacío (`null`) con la tabla vacía, que devuelve la `Medicion` con `UUID`, `Timestamp`, `TipoMedicion` y `ValorMedicion`, y que produce un error si el servidor no está disponible o responde con un error.
+- **Tests automáticos:** con mocha, en `src/frontend_business_logic/test/`, contra el servidor REST real arrancado con una base de datos temporal. Comprueban que `recuperarUltimaMedicion()` llama a `GET /recuperarUltimaMedicion`, que devuelve vacío (`null`) con la tabla vacía, que devuelve la `Medicion` con `IdSensor`, `Timestamp`, `TipoMedicion` y `ValorMedicion`, y que produce un error si el servidor no está disponible o responde con un error.
 - **Fidelidad al diseño:** no añadir métodos públicos que no aparezcan en este diseño, y mantener la firma idéntica a la del backend.

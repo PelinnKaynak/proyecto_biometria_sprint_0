@@ -17,6 +17,8 @@ UUID_16 = [ N ]_16                       (16 bytes)
 
 TramaIBeacon = ( beaconUUID: UUID_16, major: N, minor: Z, txPower: Z )
 
+   beaconUUID = "EPSG-GTI-PELIN" (14 bytes, identifica las placas de este proyecto) + idSensor (2 bytes: alto, bajo)
+
    major = tipoMedicion * 256 + contador     (byte alto: tipo, byte bajo: contador)
    minor = valorMedicion
 ```
@@ -94,10 +96,11 @@ tiempo: Z --> esperar()          (espera tiempo milisegundos)
 ```text
                               --------- Publicador --------------------------------
                               |
-                              | beaconUUID: UUID_16  = "EPSG-GTI-PROY-3A"
+                              | ID_SENSOR: N          = 1                        (NUEVO)
+                              | beaconUUID: UUID_16   = "EPSG-GTI-PELIN" + ID_SENSOR
                               |
                               |
-  laEmisora: EmisoraBLE   <-- laEmisora        (atributo público: "GTI3A-2025", 0x004c, 4)
+  laEmisora: EmisoraBLE   <-- laEmisora        (atributo público: "PelinIBeacon", 0x004c, 4)
   RSSI: Z                 <-- RSSI             (constante pública = -53)
                               |
                               |
@@ -287,8 +290,9 @@ p: [ T ], n: N --> alReves() --> [ T ]          (invierte el array)
 - **Código proporcionado:** este componente es código del profesor (carpeta `Arduino-NoCambia`). Su lógica **no se modifica**; solo se añaden cabeceras de fichero y de función con el diseño lógico (rúbrica, "Buenas prácticas").
 - **Medición ficticia:** según la rúbrica del Sprint 0 ("se introduce una medida ficticia en el código de la placa Arduino"), en este sprint no se lee el sensor de ozono. `Medidor::medirCO2()` devuelve el valor fijo **123** (y `medirTemperatura()` devuelve −12). Es el valor que debe aparecer en la página web en la prueba de funcionamiento. Para la defensa se puede cambiar a otro número reconocible.
 - **Codificación de la trama:** `publicarCO2()` pone en `major` el tipo de medición en el byte alto y el contador en el byte bajo (`major = (CO2 << 8) + contador`), y el valor en `minor`. El teléfono tiene que deshacer esta codificación (ver `android_design.md`).
-- **Tiempo de emisión (cambio respecto al código original):** en `loop()` se llama a `publicarCO2(valor, cont, 10000)` en lugar de `1000`. Con 1 segundo de anuncio cada ~5 segundos (el resto lo ocupa `lucecitas()`) la placa no aparecía en *nRF Connect*; con 10 segundos se detecta sin problemas. Es el único cambio de lógica en el código proporcionado.
-- **UUID del beacon:** `EPSG-GTI-PROY-3A` (16 caracteres ASCII). El teléfono lo usa para reconocer *nuestro* beacon entre los demás.
+- **Tiempo de emisión (cambio respecto al código original):** en `loop()` se llama a `publicarCO2(valor, cont, 10000)` en lugar de `1000`. Con 1 segundo de anuncio cada ~5 segundos (el resto lo ocupa `lucecitas()`) la placa no aparecía en *nRF Connect*; con 10 segundos se detecta sin problemas. Junto con el IdSensor en el UUID, son los únicos cambios de lógica en el código proporcionado.
+- **UUID del beacon e IdSensor (cambio respecto al código original, `(NUEVO)`):** los 14 primeros bytes son `EPSG-GTI-PELIN` (antes `EPSG-GTI-PROY-`, que es igual en las placas de todos los grupos; ahora son propios y el teléfono los usa para reconocer *nuestras* placas) y los 2 últimos son `ID_SENSOR`, el número del sensor de la placa (antes eran `'3'`, `'A'`). `ID_SENSOR` es una constante privada de `Publicador` (1 en esta placa): cada placa nueva debe tener un número distinto. Así el sistema distingue varios sensores sin cambiar `major` ni `minor`.
+- **Nombre de la emisora (`(NUEVO)`):** `PelinIBeacon` en lugar de `GTI3A-2025`, que es igual en las placas de todos los grupos, para reconocer la placa fácilmente en *nRF Connect*. El teléfono busca este mismo nombre (`android_design.md`).
 - **Callbacks:** los métodos `instalarCallbackConexionEstablecida()`, `instalarCallbackConexionTerminada()`, `instalarCallbackCaracteristicaEscrita()` y la 2ª versión de `encenderEmisora()` reciben funciones de callback. Los métodos sí aparecen en las cajas, pero, según la notación de la asignatura, el callback se omite, por eso no tienen parámetros dibujados.
 - **Tipos externos (opacos):** `BLEService`, `BLECharacteristic`, `BLEConnection` y `BleSecurityMode` son tipos de la biblioteca Bluefruit (`BleSecurityMode` es un alias de `SecureMode_t`). `T` en `alReves()` significa "cualquier tipo" (función plantilla de C++).
 - **Funciones libres sin datos de salida:** `setup()`, `loop()`, `lucecitas()`, `inicializarPlaquita()` y `esperar()` no devuelven nada, por eso se escriben sin flecha de salida (sección 4 de la notación). En los métodos de las clases, la flecha de la derecha indica si cambian el estado (`-->`) o solo lo leen (`<--`).
@@ -302,8 +306,8 @@ p: [ T ], n: N --> alReves() --> [ T ]          (invierte el array)
 - **Cabecera de fichero:** cada fichero empieza con un comentario que indica nombre del fichero, descripción, autor original (Jordi Bataller i Mascarell), aportación de Pelin Kaynak (diseño y documentación), fecha y copyright.
 - **Cabeceras de funciones/métodos:** cada función o método incluye su diseño lógico en un bloque de comentarios delimitado por líneas discontinuas (`--------------------`), con la notación de la asignatura, y una línea breve en inglés `What it does:` dentro del mismo bloque.
 - **Legibilidad:** el código debe ser lo más claro y autoexplicativo posible, de forma que casi no necesite comentarios adicionales.
-- **Tests automáticos:** en `src/arduino/test/`. El programa real de la placa (`HolaMundoIBeacon.ino` con todas sus clases) se compila en el ordenador con g++, sustituyendo Arduino y Bluefruit por un doble de prueba (`stubs/bluefruit.h`) que no emite nada y apunta lo que se le pide. `pruebasHolaMundoIBeacon.cpp` comprueba: `Medidor` (123 y −12), `LED` (encender, apagar, alternar, brillar), `PuertoSerie.escribir()`, `EmisoraBLE` (encender, nombre `GTI3A-2025`, txPower 4, fabricante 0x004C, intervalo, emitir y detener anuncio), `Publicador` (`major = (tipo << 8) + contador`, `minor = valor`, duración del anuncio y parada), `alReves()`, `stringAUint8AlReves()`, y `setup()`/`loop()` (contador, valor publicado y duración de una vuelta). Se ejecutan con `npm test` (`arduino.test.js`; se omiten si el ordenador no tiene g++).
+- **Tests automáticos:** en `src/arduino/test/`. El programa real de la placa (`HolaMundoIBeacon.ino` con todas sus clases) se compila en el ordenador con g++, sustituyendo Arduino y Bluefruit por un doble de prueba (`stubs/bluefruit.h`) que no emite nada y apunta lo que se le pide. `pruebasHolaMundoIBeacon.cpp` comprueba: `Medidor` (123 y −12), `LED` (encender, apagar, alternar, brillar), `PuertoSerie.escribir()`, `EmisoraBLE` (encender, nombre `PelinIBeacon`, txPower 4, fabricante 0x004C, intervalo, emitir y detener anuncio), `Publicador` (UUID = prefijo + IdSensor, `major = (tipo << 8) + contador`, `minor = valor`, duración del anuncio y parada), `alReves()`, `stringAUint8AlReves()`, y `setup()`/`loop()` (contador, valor publicado y duración de una vuelta). Se ejecutan con `npm test` (`arduino.test.js`; se omiten si el ordenador no tiene g++).
 - **Prueba en la placa (criterio de aceptación):**
   1. Subir el programa y abrir el Monitor Serie (115200 baudios): aparece `---- loop(): empieza N` en cada iteración.
-  2. Con la app *nRF Connect* en el teléfono se ve el dispositivo `GTI3A-2025` con UUID `EPSG-GTI-PROY-3A`, `major = 0x0B??` (11 en el byte alto) y `minor = 123`.
+  2. Con la app *nRF Connect* en el teléfono se ve el dispositivo `PelinIBeacon` con un UUID que empieza por `EPSG-GTI-PELIN` y termina en `00 01` (IdSensor = 1), `major = 0x0B??` (11 en el byte alto) y `minor = 123`.
 - **Fidelidad al diseño:** no añadir clases ni funcionalidades que no aparezcan en este diseño.

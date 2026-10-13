@@ -8,11 +8,11 @@
 -- ---------------------------------------------------------------------------
 
 -- What it does: creates the Mediciones table (only if it does not exist yet, so old data is kept).
--- Columns: id (row number, primary key), UUID (who), Timestamp (when, set by the server), TipoMedicion (11 CO2, 12 temperature, 13 noise)
--- and ValorMedicion (the value). No column can be empty and the type must be 11, 12 or 13.
+-- Columns: id (row number, primary key), IdSensor (which sensor), Timestamp (when, set by the server), TipoMedicion (11 CO2, 12 temperature, 13 noise)
+-- and ValorMedicion (the value). No column can be empty, IdSensor cannot be negative and the type must be 11, 12 or 13.
 CREATE TABLE IF NOT EXISTS Mediciones (
     id            INTEGER   NOT NULL PRIMARY KEY AUTOINCREMENT,
-    UUID          TEXT      NOT NULL,
+    IdSensor      INTEGER   NOT NULL CHECK (IdSensor >= 0),
     Timestamp     TIMESTAMP NOT NULL,
     TipoMedicion  INTEGER   NOT NULL CHECK (TipoMedicion IN (11, 12, 13)),
     ValorMedicion INTEGER   NOT NULL

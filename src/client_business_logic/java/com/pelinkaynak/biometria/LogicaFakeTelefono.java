@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // Fichero:     LogicaFakeTelefono.java
 // Descripción: Lógica fake del teléfono. guardarMedicion() crea un JSON con
-//              UUID, TipoMedicion y ValorMedicion y lo envía con
+//              IdSensor, TipoMedicion y ValorMedicion y lo envía con
 //              POST /guardarMedicion al servidor REST. No accede a la base de
 //              datos ni a la lógica del negocio. Diseño en doc/client_business_logic_design.md.
 // Autora:      Pelin Kaynak
@@ -35,7 +35,7 @@ public class LogicaFakeTelefono {
     }
 
     // -----------------------------------------------------------------------
-    // uuid: Text, tipoMedicion: N, valorMedicion: Z --> guardarMedicion() -->
+    // idSensor: N, tipoMedicion: N, valorMedicion: Z --> guardarMedicion() -->
     // (misma firma que LogicaDeNegocio.guardarMedicion() del backend)
     //
     // Crea el JSON (sin Timestamp: lo genera el backend) y hace
@@ -43,11 +43,11 @@ public class LogicaFakeTelefono {
     // What it does: makes the JSON and sends it with POST to the server.
     //               Calls guardada() if the server answered 201, error() if not.
     // -----------------------------------------------------------------------
-    public void guardarMedicion(String uuid, int tipoMedicion, int valorMedicion,
+    public void guardarMedicion(int idSensor, int tipoMedicion, int valorMedicion,
                                 final RespuestaGuardarMedicion respuesta) {
         String cuerpo;
         try {
-            cuerpo = crearJSON(uuid, tipoMedicion, valorMedicion);
+            cuerpo = crearJSON(idSensor, tipoMedicion, valorMedicion);
         } catch (JSONException error) {
             respuesta.error("no se pudo crear el JSON: " + error.getMessage());
             return;
@@ -75,13 +75,13 @@ public class LogicaFakeTelefono {
     }
 
     // -----------------------------------------------------------------------
-    // uuid: Text, tipoMedicion: N, valorMedicion: Z --> crearJSON() --> Text     (privado, estático)
-    // What it does: builds {"UUID":..., "TipoMedicion":..., "ValorMedicion":...} (no Timestamp).
+    // idSensor: N, tipoMedicion: N, valorMedicion: Z --> crearJSON() --> Text     (privado, estático)
+    // What it does: builds {"IdSensor":..., "TipoMedicion":..., "ValorMedicion":...} (no Timestamp).
     // -----------------------------------------------------------------------
-    static String crearJSON(String uuid, int tipoMedicion, int valorMedicion)
+    static String crearJSON(int idSensor, int tipoMedicion, int valorMedicion)
             throws JSONException {
         JSONObject json = new JSONObject();
-        json.put("UUID", uuid);
+        json.put("IdSensor", idSensor);
         json.put("TipoMedicion", tipoMedicion);
         json.put("ValorMedicion", valorMedicion);
         return json.toString();

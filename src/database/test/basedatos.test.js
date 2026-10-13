@@ -74,10 +74,10 @@ describe('database: script crearBaseDeDatos.sql', function () {
   it('crea la tabla Mediciones con las columnas del diseño', async function () {
     const columnas = await consultar(conexion, 'PRAGMA table_info(Mediciones)')
     const nombres = columnas.map((columna) => columna.name)
-    assert.deepStrictEqual(nombres, ['id', 'UUID', 'Timestamp', 'TipoMedicion', 'ValorMedicion'])
+    assert.deepStrictEqual(nombres, ['id', 'IdSensor', 'Timestamp', 'TipoMedicion', 'ValorMedicion'])
 
     const tipos = columnas.map((columna) => columna.type)
-    assert.deepStrictEqual(tipos, ['INTEGER', 'TEXT', 'TIMESTAMP', 'INTEGER', 'INTEGER'])
+    assert.deepStrictEqual(tipos, ['INTEGER', 'INTEGER', 'TIMESTAMP', 'INTEGER', 'INTEGER'])
 
     const noNulas = columnas.map((columna) => columna.notnull)
     assert.deepStrictEqual(noNulas, [1, 1, 1, 1, 1])
@@ -101,7 +101,7 @@ describe('database: script crearBaseDeDatos.sql', function () {
     await ejecutarScript(conexion, fs.readFileSync(SCRIPT_DATOS_PRUEBA, 'utf8'))
     const filas = await consultar(conexion, 'SELECT * FROM Mediciones WHERE TipoMedicion = 11')
     assert.strictEqual(filas.length, 1)
-    assert.strictEqual(filas[0].UUID, 'EPSG-GTI-PROY-3A')
+    assert.strictEqual(filas[0].IdSensor, 1)
     assert.strictEqual(filas[0].ValorMedicion, 123)
   })
 
@@ -120,8 +120,22 @@ describe('database: script crearBaseDeDatos.sql', function () {
   it('rechaza un TipoMedicion no válido', async function () {
     await assert.rejects(
       ejecutarScript(conexion,
-        "INSERT INTO Mediciones (UUID, Timestamp, TipoMedicion, ValorMedicion) VALUES ('x', '2026-01-01T00:00:00.000Z', 99, 1)"),
+        "INSERT INTO Mediciones (IdSensor, Timestamp, TipoMedicion, ValorMedicion) VALUES (1, '2026-01-01T00:00:00.000Z', 99, 1)"),
       /CHECK constraint failed/
     )
+  })
+
+  it('rechaza un IdSensor negativo', async function () {
+    await assert.rejects(
+      ejecutarScript(conexion,
+        "INSERT INTO Mediciones (IdSensor, Timestamp, TipoMedicion, ValorMedicion) VALUES (-1, '2026-01-01T00:00:00.000Z', 11, 1)"),
+      /CHECK constraint failed/
+    )
+  })
+
+  it('guarda mediciones de varios sensores (IdSensor 1 y 2)', async function () {
+    await ejecutarScript(conexion, fs.readFileSync(SCRIPT_DATOS_PRUEBA, 'utf8'))
+    const filas = await consultar(conexion, 'SELECT DISTINCT IdSensor FROM Mediciones ORDER BY IdSensor')
+    assert.deepStrictEqual(filas.map((fila) => fila.IdSensor), [1, 2])
   })
 })
