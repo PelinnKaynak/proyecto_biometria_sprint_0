@@ -28,9 +28,12 @@ import android.bluetooth.le.ScanFilter;
 import android.bluetooth.le.ScanResult;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.ParcelUuid;
 import android.util.Log;
 import android.view.View;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -56,6 +59,9 @@ public class MainActivity extends AppCompatActivity {
     // "EPSG-GTI-PROY-3A"); los 2 últimos bytes son el número del sensor (IdSensor)
     private static final String PREFIJO_UUID_NUESTROS_BEACONS = "EPSG-GTI-PELIN";
 
+    // (NUEVO) código del fabricante (Apple) bajo el que va la trama iBeacon en el anuncio
+    private static final int ID_FABRICANTE_APPLE = 0x004C;
+
     // --------------------------------------------------------------
     // --------------------------------------------------------------
     private BluetoothLeScanner elEscanner;
@@ -69,12 +75,48 @@ public class MainActivity extends AppCompatActivity {
     // evita enviar varias veces la misma trama repetida
     private final Map<Integer, Integer> ultimoContadorPorSensor = new HashMap<>();
 
+    // (NUEVO) textos de la pantalla: última medición recibida y estado (qué está pasando)
+    private TextView textoUltimaMedicion;
+    private TextView textoEstado;
+
+    // (NUEVO) true mientras se esperan los permisos pedidos al empezar (para no pedirlos en bucle)
+    private boolean esperandoPermisos = false;
+
+    // (NUEVO) anuncios BLE recibidos desde que se pulsó el botón (para ver en pantalla si el escaneo funciona)
+    private int anunciosRecibidos = 0;
+    // (NUEVO) de esos anuncios, cuántos son tramas iBeacon (de cualquier placa)
+    private int iBeaconsRecibidos = 0;
+    // (NUEVO) mediciones guardadas en el servidor y resultado del último envío (se ven en textoEstado)
+    private int medicionesGuardadas = 0;
+    private String ultimoResultado = "";
+    // (NUEVO) tramas de nuestras placas recibidas (aunque sean repetidas) y principio del UUID del último iBeacon recibido
+    private int tramasNuestras = 0;
+    private String ultimoIBeacon = "";
+
+    // (NUEVO) cada INTERVALO_REINICIO_ESCANEO ms se para y se vuelve a empezar el escaneo:
+    // muchos teléfonos solo avisan UNA vez de cada dispositivo en cada escaneo, así que
+    // sin reiniciar solo llegaba la primera trama de la placa (una sola medición)
+    private static final long INTERVALO_REINICIO_ESCANEO = 10000;
+    private final Handler elTemporizador = new Handler(Looper.getMainLooper());
+    private final Runnable reinicioDelEscaneo = new Runnable() {
+        @Override
+        public void run() {
+            reiniciarEscaneo();
+        }
+    };
+
     // ------------------------------------------------------------
     // buscarTodosLosDispositivosBTLE() -->
     // What it does: scans ALL the Bluetooth devices around and only writes them in the log.
     // ------------------------------------------------------------
+    @SuppressLint("MissingPermission") // (NUEVO) los permisos se comprueban con tienePermisosBluetooth()
     private void buscarTodosLosDispositivosBTLE() {
         Log.d(ETIQUETA_LOG, " buscarTodosLosDispositivosBTL(): empieza ");
+
+        if (this.elEscanner == null) { // (NUEVO)
+            mostrarEstado("Bluetooth no disponible: enciende el Bluetooth y vuelve a abrir la app");
+            return;
+        }
 
         Log.d(ETIQUETA_LOG, " buscarTodosLosDispositivosBTL(): instalamos scan callback ");
 
@@ -104,19 +146,14 @@ public class MainActivity extends AppCompatActivity {
 
         Log.d(ETIQUETA_LOG, " buscarTodosLosDispositivosBTL(): empezamos a escanear ");
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
+        if (!tienePermisosBluetooth()) { // (NUEVO) antes: checkSelfPermission(BLUETOOTH_SCAN), que no existe antes de Android 12
             Log.d(ETIQUETA_LOG, " buscarTodosLosDispositivosBTL(): vuelvo a pedir permiso para escanear por si no lo tuviea de antes");
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
+            mostrarEstado("Faltan permisos de Bluetooth / ubicación: dalos en Ajustes > Aplicaciones");
             return;
         }
         Log.d(ETIQUETA_LOG, " buscarTodosLosDispositivosBTL(): startScan ");
         this.elEscanner.startScan(this.callbackDelEscaneo);
+        mostrarEstado("Buscando todos los dispositivos (los resultados solo salen en Logcat)"); // (NUEVO)
 
         Log.d(ETIQUETA_LOG, " buscarTodosLosDispositivosBTL(): termina ");
     } // ()
@@ -125,6 +162,7 @@ public class MainActivity extends AppCompatActivity {
     // resultado: ScanResult --> mostrarInformacionDispositivoBTLE() -->
     // What it does: writes in the log all the details of a found packet (name, rssi, UUID, major, minor...).
     // ------------------------------------------------------------
+    @SuppressLint("MissingPermission") // (NUEVO) los permisos se comprueban con tienePermisosBluetooth()
     private void mostrarInformacionDispositivoBTLE(ScanResult resultado) {
 
         Log.d(ETIQUETA_LOG, " mostrarInformacionDispositivoBTLLE(): empieza ");
@@ -138,14 +176,7 @@ public class MainActivity extends AppCompatActivity {
         Log.d(ETIQUETA_LOG, " ****************************************************");
         Log.d(ETIQUETA_LOG, " ****** DISPOSITIVO DETECTADO BTLE ****************** ");
         Log.d(ETIQUETA_LOG, " ****************************************************");
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
+        if (!tienePermisosBluetooth()) { // (NUEVO) antes: checkSelfPermission(BLUETOOTH_CONNECT), que no existe antes de Android 12
             Log.d(ETIQUETA_LOG, " mostrarInformacionDispositivoBTLLE(): no tengo el permiso BLUETOOTH_CONNECT ");
             return;
         }
@@ -187,14 +218,34 @@ public class MainActivity extends AppCompatActivity {
     } // ()
 
     // ------------------------------------------------------------
-    // dispositivoBuscado: Text --> buscarEsteDispositivoBTLE() -->
-    // What it does: scans only the device with this name ("PelinIBeacon"). For each packet:
-    //               writes it in the log and processes it with procesarTramaDetectada().
+    // prefijoUUID: Text --> buscarEsteDispositivoBTLE() -->
+    //
+    // (NUEVO) El escaneo se hace SIN filtro de Android y el filtro se hace en
+    // la app: procesarTramaDetectada() solo acepta las tramas cuyo UUID empieza
+    // por prefijoUUID. El filtro por nombre no funcionaba (el nombre va en la
+    // respuesta de escaneo) y el filtro por datos del fabricante no lo aplican
+    // igual todos los teléfonos (en algunos no llega ninguna trama).
+    // What it does: scans all BLE packets and processes each one with procesarTramaDetectada(),
+    //               which keeps only iBeacons whose UUID starts with prefijoUUID ("EPSG-GTI-PELIN").
     // ------------------------------------------------------------
-    private void buscarEsteDispositivoBTLE(final String dispositivoBuscado) {
+    @SuppressLint("MissingPermission") // (NUEVO) los permisos se comprueban con tienePermisosBluetooth()
+    private void buscarEsteDispositivoBTLE(final String prefijoUUID) {
         Log.d(ETIQUETA_LOG, " buscarEsteDispositivoBTLE(): empieza ");
 
-        Log.d(ETIQUETA_LOG, " buscarEsteDispositivoBTLE(): buscando " + dispositivoBuscado);
+        if (this.elEscanner == null) { // (NUEVO)
+            mostrarEstado("Bluetooth no disponible: enciende el Bluetooth y vuelve a abrir la app");
+            return;
+        }
+
+        Log.d(ETIQUETA_LOG, " buscarEsteDispositivoBTLE(): buscando " + prefijoUUID);
+
+        // (NUEVO) si ya había una búsqueda en marcha (botón pulsado otra vez), se para
+        // antes de empezar otra: si no, se acumulan escaneos y Android deja de dar resultados
+        this.elTemporizador.removeCallbacks(this.reinicioDelEscaneo);
+        if (this.callbackDelEscaneo != null && tienePermisosBluetooth()) {
+            this.elEscanner.stopScan(this.callbackDelEscaneo);
+            this.callbackDelEscaneo = null;
+        }
 
         Log.d(ETIQUETA_LOG, "  buscarEsteDispositivoBTLE(): instalamos scan callback ");
 
@@ -206,9 +257,18 @@ public class MainActivity extends AppCompatActivity {
             public void onScanResult(int callbackType, ScanResult resultado) {
                 super.onScanResult(callbackType, resultado);
                 Log.d(ETIQUETA_LOG, "  buscarEsteDispositivoBTLE(): onScanResult() ");
+                // (NUEVO) ya no se llama a mostrarInformacionDispositivoBTLE(): sin filtro llenaría el Log
 
-                mostrarInformacionDispositivoBTLE(resultado);
-                procesarTramaDetectada(resultado); // (NUEVO)
+                // (NUEVO) cuenta los anuncios y lo muestra en pantalla
+                anunciosRecibidos++;
+                if (anunciosRecibidos % 10 == 1) { // cada 10, para no saturar la pantalla
+                    mostrarEstadoBusqueda();
+                }
+                try {
+                    procesarTramaDetectada(resultado); // (NUEVO)
+                } catch (Exception e) { // (NUEVO) una trama de otro dispositivo con otro formato no debe cerrar la app
+                    Log.d(ETIQUETA_LOG, "  buscarEsteDispositivoBTLE(): trama no válida: " + e);
+                }
             }
 
             @Override
@@ -222,24 +282,26 @@ public class MainActivity extends AppCompatActivity {
             public void onScanFailed(int errorCode) {
                 super.onScanFailed(errorCode);
                 Log.d(ETIQUETA_LOG, "  buscarEsteDispositivoBTLE(): onScanFailed() ");
+                mostrarEstado("Error al empezar a buscar (código " + errorCode + ")"); // (NUEVO)
 
             }
         };
 
-        ScanFilter sf = new ScanFilter.Builder().setDeviceName(dispositivoBuscado).build();
+        // (NUEVO) sin ScanFilter: antes se filtraba por el nombre (setDeviceName)
+        // y después por los datos del fabricante; ahora filtra procesarTramaDetectada()
+        this.anunciosRecibidos = 0;
+        this.iBeaconsRecibidos = 0;
+        this.medicionesGuardadas = 0;
+        this.ultimoResultado = "";
+        this.tramasNuestras = 0;
+        this.ultimoIBeacon = "";
 
-        Log.d(ETIQUETA_LOG, "  buscarEsteDispositivoBTLE(): empezamos a escanear buscando: " + dispositivoBuscado);
-        //Log.d(ETIQUETA_LOG, "  buscarEsteDispositivoBTLE(): empezamos a escanear buscando: " + dispositivoBuscado
-        //      + " -> " + Utilidades.stringToUUID( dispositivoBuscado ) );
+        Log.d(ETIQUETA_LOG, "  buscarEsteDispositivoBTLE(): empezamos a escanear buscando: " + prefijoUUID);
+        //Log.d(ETIQUETA_LOG, "  buscarEsteDispositivoBTLE(): empezamos a escanear buscando: " + prefijoUUID
+        //      + " -> " + Utilidades.stringToUUID( prefijoUUID ) );
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
+        if (!tienePermisosBluetooth()) { // (NUEVO) antes: checkSelfPermission(BLUETOOTH_SCAN), que no existe antes de Android 12
+            mostrarEstado("Faltan permisos de Bluetooth / ubicación: dalos en Ajustes > Aplicaciones");
             return;
         }
 
@@ -251,14 +313,15 @@ public class MainActivity extends AppCompatActivity {
 
         ScanSettings settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
 
-        ArrayList<ScanFilter> filtros = new ArrayList<ScanFilter>();
-        filtros.add( sf );
+        ArrayList<ScanFilter> filtros = new ArrayList<ScanFilter>(); // (NUEVO) vacía: sin filtro de Android
 
 
         // ANTES this.elEscanner.startScan( this.callbackDelEscaneo);
 
         // AHORA (2025)
         this.elEscanner.startScan( filtros, settings, this.callbackDelEscaneo);
+        mostrarEstadoBusqueda(); // (NUEVO)
+        this.elTemporizador.postDelayed(this.reinicioDelEscaneo, INTERVALO_REINICIO_ESCANEO); // (NUEVO)
 
         Log.d(ETIQUETA_LOG, " buscarEsteDispositivoBTLE(): termina");
     } // ()
@@ -266,9 +329,12 @@ public class MainActivity extends AppCompatActivity {
     // --------------------------------------------------------------
     // resultado: ScanResult --> procesarTramaDetectada() -->          (NUEVO)
     //
-    // Deshace la codificación del Arduino (UUID = prefijo + IdSensor,
-    // major = tipo * 256 + contador, minor = valor) con TramaIBeacon y
-    // Utilidades y, si la trama es de una placa del proyecto y trae un
+    // Saca la trama iBeacon de los datos del fabricante Apple (0x004C) del
+    // anuncio: 02 15 + UUID (16) + major (2) + minor (2) + txPower (1). Así no
+    // depende de en qué posición del anuncio la pone cada teléfono (TramaIBeacon
+    // supone posiciones fijas y en algunos teléfonos no coinciden). Deshace la
+    // codificación del Arduino (UUID = prefijo + IdSensor,
+    // major = tipo * 256 + contador, minor = valor) y, si la trama es de una placa del proyecto y trae un
     // contador nuevo para ese sensor, envía IdSensor, TipoMedicion y
     // ValorMedicion al servidor con laLogica.guardarMedicion().
     // What it does: if the packet is from one of our boards and has a new counter for that sensor,
@@ -276,20 +342,30 @@ public class MainActivity extends AppCompatActivity {
     //               and value (minor) and sends them to the server.
     // --------------------------------------------------------------
     private void procesarTramaDetectada(ScanResult resultado) {
-        TramaIBeacon trama = new TramaIBeacon(resultado.getScanRecord().getBytes());
+        if (resultado.getScanRecord() == null) {
+            return;
+        }
+        byte[] datos = resultado.getScanRecord().getManufacturerSpecificData(ID_FABRICANTE_APPLE);
+        if (datos == null || datos.length < 22 || datos[0] != 0x02 || datos[1] != 0x15) {
+            return; // no es una trama iBeacon
+        }
+        this.iBeaconsRecibidos++;
 
-        byte[] uuid = trama.getUUID();
+        byte[] uuid = Arrays.copyOfRange(datos, 2, 18);   // 16 bytes
+        byte[] major = Arrays.copyOfRange(datos, 18, 20); // 2 bytes
+        byte[] minor = Arrays.copyOfRange(datos, 20, 22); // 2 bytes
         String prefijo = Utilidades.bytesToString(Arrays.copyOfRange(uuid, 0, 14));
+        this.ultimoIBeacon = textoLegible(prefijo);
         if (!PREFIJO_UUID_NUESTROS_BEACONS.equals(prefijo)) {
             Log.d(ETIQUETA_LOG, " procesarTramaDetectada(): no es nuestro beacon, UUID = " + Utilidades.bytesToString(uuid));
             return;
         }
+        this.tramasNuestras++;
         int idSensor = ((uuid[14] & 0xFF) << 8) | (uuid[15] & 0xFF); // 2 últimos bytes del UUID
 
-        byte[] major = trama.getMajor();
         int tipoMedicion = major[0] & 0xFF;                          // byte alto de major
         int contador = major[1] & 0xFF;                              // byte bajo de major
-        int valorMedicion = Utilidades.bytesToInt(trama.getMinor()); // minor
+        int valorMedicion = Utilidades.bytesToInt(minor);                 // minor
 
         Integer ultimoContador = this.ultimoContadorPorSensor.get(idSensor);
         if (ultimoContador != null && ultimoContador == contador) {
@@ -299,17 +375,25 @@ public class MainActivity extends AppCompatActivity {
 
         Log.d(ETIQUETA_LOG, " procesarTramaDetectada(): envío IdSensor = " + idSensor
                 + " TipoMedicion = " + tipoMedicion + " ValorMedicion = " + valorMedicion + " contador = " + contador);
+        mostrarMedicion(idSensor, tipoMedicion, valorMedicion, contador);
+        this.ultimoResultado = "Enviando la medición (contador " + contador + ")...";
+        mostrarEstadoBusqueda();
 
         this.laLogica.guardarMedicion(idSensor, tipoMedicion, valorMedicion,
                 new LogicaFakeTelefono.RespuestaGuardarMedicion() {
                     @Override
                     public void guardada() {
                         Log.d(ETIQUETA_LOG, " procesarTramaDetectada(): guardada en el servidor = true");
+                        medicionesGuardadas++;
+                        ultimoResultado = "Guardada en el servidor ✓ (" + medicionesGuardadas + " en total)";
+                        mostrarEstadoBusqueda();
                     }
 
                     @Override
                     public void error(String mensaje) {
                         Log.d(ETIQUETA_LOG, " procesarTramaDetectada(): guardada en el servidor = false (" + mensaje + ")");
+                        ultimoResultado = "No se pudo guardar en el servidor: " + mensaje;
+                        mostrarEstadoBusqueda();
                     }
                 });
     } // ()
@@ -318,6 +402,7 @@ public class MainActivity extends AppCompatActivity {
     // detenerBusquedaDispositivosBTLE() -->
     // What it does: stops the current scan.
     // ------------------------------------------------------------
+    @SuppressLint("MissingPermission") // (NUEVO) los permisos se comprueban con tienePermisosBluetooth()
     private void detenerBusquedaDispositivosBTLE() {
 
         Log.d(ETIQUETA_LOG, " detenerBusquedaDispositivosBTLE(): empieza");
@@ -326,20 +411,15 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) != PackageManager.PERMISSION_GRANTED) {
-            // TODO: Consider calling
-            //    ActivityCompat#requestPermissions
-            // here to request the missing permissions, and then overriding
-            //   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-            //                                          int[] grantResults)
-            // to handle the case where the user grants the permission. See the documentation
-            // for ActivityCompat#requestPermissions for more details.
+        if (!tienePermisosBluetooth() || this.elEscanner == null) { // (NUEVO) antes: checkSelfPermission(BLUETOOTH_SCAN)
             return;
         }
 
         Log.d(ETIQUETA_LOG, " detenerBusquedaDispositivosBTLE(): parando scan");
+        this.elTemporizador.removeCallbacks(this.reinicioDelEscaneo); // (NUEVO)
         this.elEscanner.stopScan(this.callbackDelEscaneo);
         this.callbackDelEscaneo = null;
+        mostrarEstado("Búsqueda detenida"); // (NUEVO)
 
         Log.d(ETIQUETA_LOG, " detenerBusquedaDispositivosBTLE(): termina");
     } // ()
@@ -355,14 +435,14 @@ public class MainActivity extends AppCompatActivity {
 
     // ------------------------------------------------------------
     // v: View --> botonBuscarNuestroDispositivoBTLEPulsado() -->
-    // What it does: button 'search our device' -> scans "PelinIBeacon" and sends its measurements.
+    // What it does: button 'search our device' -> scans our iBeacons (UUID starting with "EPSG-GTI-PELIN") and sends their measurements.
     // ------------------------------------------------------------
     public void botonBuscarNuestroDispositivoBTLEPulsado(View v) {
         Log.d(ETIQUETA_LOG, " boton nuestro dispositivo BTLE Pulsado");
         //this.buscarEsteDispositivoBTLE( Utilidades.stringToUUID( "EPSG-GTI-PROY-3A" ) );
 
         //this.buscarEsteDispositivoBTLE("EPSG-GTI-PROY-3A");
-        this.buscarEsteDispositivoBTLE("PelinIBeacon" );
+        this.buscarEsteDispositivoBTLE(PREFIJO_UUID_NUESTROS_BEACONS); // (NUEVO) antes: "GTI3A-2025"
         //this.buscarEsteDispositivoBTLE("GTI");
         //this.buscarEsteDispositivoBTLE( "fistro" );
 
@@ -396,6 +476,8 @@ public class MainActivity extends AppCompatActivity {
         // a inicializarBlueTooth()
         if (!tienePermisosBluetooth()) {
             Log.d(ETIQUETA_LOG, " inicializarBlueTooth(): no tengo permisos, los pido ");
+            mostrarEstado("Pidiendo permisos de Bluetooth y ubicación...");
+            this.esperandoPermisos = true;
             requestPermissions(
                     new String[]{Manifest.permission.BLUETOOTH_SCAN,
                             Manifest.permission.BLUETOOTH_CONNECT,
@@ -417,6 +499,9 @@ public class MainActivity extends AppCompatActivity {
 
         if ( this.elEscanner == null ) {
             Log.d(ETIQUETA_LOG, " inicializarBlueTooth(): Socorro: NO hemos obtenido escaner btle  !!!!");
+            mostrarEstado("Bluetooth apagado: enciéndelo y vuelve a abrir la app");
+        } else {
+            mostrarEstado("Listo: pulsa «Buscar nuestro dispositivo BTLE»");
 
         }
 
@@ -516,17 +601,96 @@ public class MainActivity extends AppCompatActivity {
     // --------------------------------------------------------------
     // --------------------------------------------------------------
     // ------------------------------------------------------------
+    // texto: Text --> mostrarEstado() -->          (NUEVO)
+    // What it does: writes the text in the log and shows it on the screen (what is happening now).
+    // ------------------------------------------------------------
+    private void mostrarEstado(final String texto) {
+        Log.d(ETIQUETA_LOG, " estado: " + texto);
+        runOnUiThread(() -> {
+            if (this.textoEstado != null) {
+                this.textoEstado.setText(texto);
+            }
+        });
+    } // ()
+
+    // ------------------------------------------------------------
+    // reiniciarEscaneo() -->          (NUEVO)
+    // What it does: stops and starts the scan again with the same callback (the phone then reports
+    //               our board again, with its new counter) and schedules the next restart.
+    // ------------------------------------------------------------
+    @SuppressLint("MissingPermission") // los permisos se comprueban con tienePermisosBluetooth()
+    private void reiniciarEscaneo() {
+        if (this.callbackDelEscaneo == null || this.elEscanner == null || !tienePermisosBluetooth()) {
+            return;
+        }
+        Log.d(ETIQUETA_LOG, " reiniciarEscaneo()");
+        this.elEscanner.stopScan(this.callbackDelEscaneo);
+        ScanSettings settings = new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
+        this.elEscanner.startScan(new ArrayList<ScanFilter>(), settings, this.callbackDelEscaneo);
+        this.elTemporizador.postDelayed(this.reinicioDelEscaneo, INTERVALO_REINICIO_ESCANEO);
+    } // ()
+
+    // ------------------------------------------------------------
+    // texto: Text --> textoLegible() --> Text          (NUEVO)
+    // What it does: returns the text with the non printable characters changed to '?'.
+    // ------------------------------------------------------------
+    private static String textoLegible(String texto) {
+        StringBuilder resultado = new StringBuilder();
+        for (char c : texto.toCharArray()) {
+            resultado.append(c >= 32 && c <= 126 ? c : '?');
+        }
+        return resultado.toString();
+    } // ()
+
+    // ------------------------------------------------------------
+    // mostrarEstadoBusqueda() -->          (NUEVO)
+    // What it does: shows on the screen how the search is going: BLE packets and iBeacons received
+    //               and the result of the last measurement sent to the server.
+    // ------------------------------------------------------------
+    private void mostrarEstadoBusqueda() {
+        String texto = "";
+        if (!this.ultimoResultado.isEmpty()) {
+            texto = this.ultimoResultado + "\n\n"; // (el resultado primero, para que siempre se vea)
+        }
+        texto = texto + "Buscando nuestra placa... (" + this.anunciosRecibidos + " anuncios BLE, "
+                + this.iBeaconsRecibidos + " iBeacon, " + this.tramasNuestras + " de nuestra placa)";
+        if (!this.ultimoIBeacon.isEmpty()) {
+            texto = texto + "\nÚltimo iBeacon: " + this.ultimoIBeacon;
+        }
+        mostrarEstado(texto);
+    } // ()
+
+    // ------------------------------------------------------------
+    // idSensor: N, tipoMedicion: N, valorMedicion: Z, contador: N --> mostrarMedicion() -->          (NUEVO)
+    // What it does: shows on the screen the last measurement received from the board (type as a name, 11 -> CO2).
+    // ------------------------------------------------------------
+    private void mostrarMedicion(int idSensor, int tipoMedicion, int valorMedicion, int contador) {
+        final String nombreTipo = tipoMedicion == 11 ? "CO2"
+                : tipoMedicion == 12 ? "Temperatura"
+                : tipoMedicion == 13 ? "Ruido"
+                : String.valueOf(tipoMedicion);
+        final String texto = "IdSensor " + idSensor + "  ·  " + nombreTipo + "  ·  " + valorMedicion
+                + "\n(contador " + contador + ")";
+        runOnUiThread(() -> {
+            if (this.textoUltimaMedicion != null) {
+                this.textoUltimaMedicion.setText(texto);
+            }
+        });
+    } // ()
+
+    // ------------------------------------------------------------
     // tienePermisosBluetooth() --> B          (NUEVO)
     //
-    // true si la app puede escanear y conectar por Bluetooth
-    // (permisos BLUETOOTH_SCAN y BLUETOOTH_CONNECT, que existen
-    // desde Android 12; en versiones anteriores devuelve true)
-    // What it does: returns true if the app has the BLUETOOTH_SCAN and BLUETOOTH_CONNECT permissions
-    //               (always true before Android 12).
+    // true si la app puede escanear por Bluetooth: desde Android 12,
+    // permisos BLUETOOTH_SCAN y BLUETOOTH_CONNECT; antes de Android 12
+    // esos permisos no existen y lo que hace falta es ACCESS_FINE_LOCATION
+    // What it does: returns true if the app has the permissions it needs to scan:
+    //               BLUETOOTH_SCAN and BLUETOOTH_CONNECT (Android 12+) or ACCESS_FINE_LOCATION (older)
     // ------------------------------------------------------------
     private boolean tienePermisosBluetooth() {
         if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.S) {
-            return true; // antes de Android 12 estos permisos no existen
+            // antes de Android 12 BLUETOOTH_SCAN no existe: hace falta la ubicación
+            return ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED;
         }
         return ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_SCAN) == PackageManager.PERMISSION_GRANTED
                 && ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED;
@@ -540,6 +704,8 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        this.textoUltimaMedicion = findViewById(R.id.textoUltimaMedicion); // (NUEVO)
+        this.textoEstado = findViewById(R.id.textoEstado);                 // (NUEVO)
 
         Log.d(ETIQUETA_LOG, " onCreate(): empieza ");
 
@@ -568,7 +734,8 @@ public class MainActivity extends AppCompatActivity {
                 if (tienePermisosBluetooth()) { // (NUEVO) antes: grantResults[0]
 
                     Log.d(ETIQUETA_LOG, " onRequestPermissionResult(): permisos concedidos  !!!!");
-                    if (this.elEscanner == null) {
+                    if (this.esperandoPermisos) {
+                        this.esperandoPermisos = false;
                         inicializarBlueTooth(); // (NUEVO) ahora sí se puede obtener el escáner
                     }
                     // Permission is granted. Continue the action or workflow
@@ -576,6 +743,7 @@ public class MainActivity extends AppCompatActivity {
                 }  else {
 
                     Log.d(ETIQUETA_LOG, " onRequestPermissionResult(): Socorro: permisos NO concedidos  !!!!");
+                    mostrarEstado("Sin permisos de Bluetooth / ubicación: dalos en Ajustes > Aplicaciones");
 
                 }
                 return;

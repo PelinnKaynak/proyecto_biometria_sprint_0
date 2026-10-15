@@ -88,6 +88,8 @@ public class PeticionarioREST extends AsyncTask<Void, Void, Boolean> {
             URL url = new URL(urlDestino);
 
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setConnectTimeout(5000); // (NUEVO) si en 5 s no conecta, error (antes podía esperar mucho)
+            connection.setReadTimeout(5000);    // (NUEVO)
 			connection.setRequestProperty( "Content-Type", "application/json; charset-utf-8" );
             connection.setRequestMethod(this.elMetodo);
             // connection.setRequestProperty("Accept", "*/*);
@@ -144,6 +146,8 @@ public class PeticionarioREST extends AsyncTask<Void, Void, Boolean> {
 
         } catch (Exception ex) {
             Log.d("clienterestandroid", "doInBackground(): ocurrio alguna otra excepcion: " + ex.getMessage());
+            // (NUEVO) el motivo va en el cuerpo para que se vea en la pantalla (el código queda en 0)
+            this.cuerpoRespuesta = "(" + ex.getClass().getSimpleName() + ": " + ex.getMessage() + ")";
         }
 
         return false; // doInBackground() NO termina bien

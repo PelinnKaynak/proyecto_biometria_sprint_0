@@ -143,6 +143,12 @@ public:
 	//
 	(*this).detenerAnuncio();
 	
+	// (NUEVO) se borran los datos del anuncio anterior: si no, en cada loop
+	// los datos nuevos se añaden detrás de los viejos, no caben en el anuncio
+	// (31 bytes) y la placa sigue emitiendo la primera trama (mismo contador)
+	Bluefruit.Advertising.clearData();
+	Bluefruit.ScanResponse.clearData();
+	
 	//
 	// creo el beacon 
 	//
