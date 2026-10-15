@@ -154,10 +154,7 @@ tiempo: Z --> esperar()          (espera tiempo milisegundos)
   txPower: Z                       |
                                    |
                                    |
-                                   encenderEmisora() -->
-                                   |
-                                   |
-                                   encenderEmisora() -->      (2ª versión: además instala los callbacks de conexión)
+                                   encenderEmisora() -->      (2 versiones; ver Aclaraciones)
                                    |
                                    |
                                    instalarCallbackConexionEstablecida() -->
@@ -228,7 +225,7 @@ tiempo: Z --> esperar()          (espera tiempo milisegundos)
                                    activarServicio() -->
                                    |
                                    |
-               BLEService     <--  operator BLEService&() <--
+               BLEService     <--  operator BLEService() <--
                                    |
                                    ---------------------------------------------------------
 
@@ -287,6 +284,8 @@ p: [ T ], n: N --> alReves() --> [ T ]          (invierte el array)
 
 ## 2. Aclaraciones del diseño
 
+- **operator BLEService() (ServicioEnEmisora):** es una conversión de tipo de C++ (`operator BLEService&()`): permite usar un `ServicioEnEmisora` donde Bluefruit espera un `BLEService` (por ejemplo en `anyadirServicio()`), y devuelve `elServicio`. En C++ su nombre es literalmente `operator BLEService`; el `&` (referencia) se quita según la notación.
+- **encenderEmisora() (2 versiones):** en el código hay dos `encenderEmisora()`: una sin parámetros y otra que además recibe los callbacks de conexión establecida y terminada. Como la notación omite los callbacks, las dos tienen el mismo diseño lógico y se dibujan una sola vez. Por la misma razón, `instalarCallbackConexionEstablecida()` e `instalarCallbackConexionTerminada()` se dibujan sin parámetros.
 - **Código proporcionado:** este componente es código del profesor (carpeta `Arduino-NoCambia`). Su lógica **no se modifica**; solo se añaden cabeceras de fichero y de función con el diseño lógico (rúbrica, "Buenas prácticas").
 - **Medición ficticia:** según la rúbrica del Sprint 0 ("se introduce una medida ficticia en el código de la placa Arduino"), en este sprint no se lee el sensor de ozono. `Medidor::medirCO2()` devuelve el valor fijo **123** (y `medirTemperatura()` devuelve −12). Es el valor que debe aparecer en la página web en la prueba de funcionamiento. Para la defensa se puede cambiar a otro número reconocible.
 - **Codificación de la trama:** `publicarCO2()` pone en `major` el tipo de medición en el byte alto y el contador en el byte bajo (`major = (CO2 << 8) + contador`), y el valor en `minor`. El teléfono tiene que deshacer esta codificación (ver `android_design.md`).

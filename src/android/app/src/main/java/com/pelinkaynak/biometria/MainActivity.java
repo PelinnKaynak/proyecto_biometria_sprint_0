@@ -82,16 +82,9 @@ public class MainActivity extends AppCompatActivity {
     // (NUEVO) true mientras se esperan los permisos pedidos al empezar (para no pedirlos en bucle)
     private boolean esperandoPermisos = false;
 
-    // (NUEVO) anuncios BLE recibidos desde que se pulsó el botón (para ver en pantalla si el escaneo funciona)
-    private int anunciosRecibidos = 0;
-    // (NUEVO) de esos anuncios, cuántos son tramas iBeacon (de cualquier placa)
-    private int iBeaconsRecibidos = 0;
     // (NUEVO) mediciones guardadas en el servidor y resultado del último envío (se ven en textoEstado)
     private int medicionesGuardadas = 0;
     private String ultimoResultado = "";
-    // (NUEVO) tramas de nuestras placas recibidas (aunque sean repetidas) y principio del UUID del último iBeacon recibido
-    private int tramasNuestras = 0;
-    private String ultimoIBeacon = "";
 
     // (NUEVO) cada INTERVALO_REINICIO_ESCANEO ms se para y se vuelve a empezar el escaneo:
     // muchos teléfonos solo avisan UNA vez de cada dispositivo en cada escaneo, así que
@@ -116,6 +109,14 @@ public class MainActivity extends AppCompatActivity {
         if (this.elEscanner == null) { // (NUEVO)
             mostrarEstado("Bluetooth no disponible: enciende el Bluetooth y vuelve a abrir la app");
             return;
+        }
+
+        // (NUEVO) si ya había una búsqueda en marcha (de este botón o del otro), se para
+        // antes de empezar otra: si no, se pierde su callback y "Detener" ya no la puede parar
+        this.elTemporizador.removeCallbacks(this.reinicioDelEscaneo);
+        if (this.callbackDelEscaneo != null && tienePermisosBluetooth()) {
+            this.elEscanner.stopScan(this.callbackDelEscaneo);
+            this.callbackDelEscaneo = null;
         }
 
         Log.d(ETIQUETA_LOG, " buscarTodosLosDispositivosBTL(): instalamos scan callback ");
@@ -258,12 +259,6 @@ public class MainActivity extends AppCompatActivity {
                 super.onScanResult(callbackType, resultado);
                 Log.d(ETIQUETA_LOG, "  buscarEsteDispositivoBTLE(): onScanResult() ");
                 // (NUEVO) ya no se llama a mostrarInformacionDispositivoBTLE(): sin filtro llenaría el Log
-
-                // (NUEVO) cuenta los anuncios y lo muestra en pantalla
-                anunciosRecibidos++;
-                if (anunciosRecibidos % 10 == 1) { // cada 10, para no saturar la pantalla
-                    mostrarEstadoBusqueda();
-                }
                 try {
                     procesarTramaDetectada(resultado); // (NUEVO)
                 } catch (Exception e) { // (NUEVO) una trama de otro dispositivo con otro formato no debe cerrar la app
@@ -289,12 +284,8 @@ public class MainActivity extends AppCompatActivity {
 
         // (NUEVO) sin ScanFilter: antes se filtraba por el nombre (setDeviceName)
         // y después por los datos del fabricante; ahora filtra procesarTramaDetectada()
-        this.anunciosRecibidos = 0;
-        this.iBeaconsRecibidos = 0;
         this.medicionesGuardadas = 0;
         this.ultimoResultado = "";
-        this.tramasNuestras = 0;
-        this.ultimoIBeacon = "";
 
         Log.d(ETIQUETA_LOG, "  buscarEsteDispositivoBTLE(): empezamos a escanear buscando: " + prefijoUUID);
         //Log.d(ETIQUETA_LOG, "  buscarEsteDispositivoBTLE(): empezamos a escanear buscando: " + prefijoUUID
@@ -349,18 +340,15 @@ public class MainActivity extends AppCompatActivity {
         if (datos == null || datos.length < 22 || datos[0] != 0x02 || datos[1] != 0x15) {
             return; // no es una trama iBeacon
         }
-        this.iBeaconsRecibidos++;
 
         byte[] uuid = Arrays.copyOfRange(datos, 2, 18);   // 16 bytes
         byte[] major = Arrays.copyOfRange(datos, 18, 20); // 2 bytes
         byte[] minor = Arrays.copyOfRange(datos, 20, 22); // 2 bytes
         String prefijo = Utilidades.bytesToString(Arrays.copyOfRange(uuid, 0, 14));
-        this.ultimoIBeacon = textoLegible(prefijo);
         if (!PREFIJO_UUID_NUESTROS_BEACONS.equals(prefijo)) {
             Log.d(ETIQUETA_LOG, " procesarTramaDetectada(): no es nuestro beacon, UUID = " + Utilidades.bytesToString(uuid));
             return;
         }
-        this.tramasNuestras++;
         int idSensor = ((uuid[14] & 0xFF) << 8) | (uuid[15] & 0xFF); // 2 últimos bytes del UUID
 
         int tipoMedicion = major[0] & 0xFF;                          // byte alto de major
@@ -631,32 +619,16 @@ public class MainActivity extends AppCompatActivity {
     } // ()
 
     // ------------------------------------------------------------
-    // texto: Text --> textoLegible() --> Text          (NUEVO)
-    // What it does: returns the text with the non printable characters changed to '?'.
-    // ------------------------------------------------------------
-    private static String textoLegible(String texto) {
-        StringBuilder resultado = new StringBuilder();
-        for (char c : texto.toCharArray()) {
-            resultado.append(c >= 32 && c <= 126 ? c : '?');
-        }
-        return resultado.toString();
-    } // ()
-
-    // ------------------------------------------------------------
     // mostrarEstadoBusqueda() -->          (NUEVO)
-    // What it does: shows on the screen how the search is going: BLE packets and iBeacons received
-    //               and the result of the last measurement sent to the server.
+    // What it does: shows on the screen that it is searching and the result of the last
+    //               measurement sent to the server.
     // ------------------------------------------------------------
     private void mostrarEstadoBusqueda() {
         String texto = "";
         if (!this.ultimoResultado.isEmpty()) {
             texto = this.ultimoResultado + "\n\n"; // (el resultado primero, para que siempre se vea)
         }
-        texto = texto + "Buscando nuestra placa... (" + this.anunciosRecibidos + " anuncios BLE, "
-                + this.iBeaconsRecibidos + " iBeacon, " + this.tramasNuestras + " de nuestra placa)";
-        if (!this.ultimoIBeacon.isEmpty()) {
-            texto = texto + "\nÚltimo iBeacon: " + this.ultimoIBeacon;
-        }
+        texto = texto + "Buscando nuestra placa...";
         mostrarEstado(texto);
     } // ()
 

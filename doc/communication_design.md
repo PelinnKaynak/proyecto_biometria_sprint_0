@@ -30,7 +30,8 @@ ERROR = 400 | 404 | 500 ( error: Text )
                                    | logica: LogicaDeNegocio
                                    | elServidorHTTP: ServidorHTTP
                                    |
-                                   |    cuerpo: JSON --> esMedicionEntranteValida() --> B
+                                   |    cuerpo: JSON --> esMedicionEntranteValida() --x
+                                   |    B <--
                                    |    error: Error --> responderJSONMalFormado() -->   (JSON mal formado -> 400)
                                    |
                                    |
