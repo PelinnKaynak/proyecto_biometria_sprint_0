@@ -22,7 +22,8 @@ let logica = null // instancia privada de LogicaDeNegocio (solo la usa este mód
 let elServidorHTTP = null
 
 // ---------------------------------------------------------------------------
-// cuerpo: JSON( IdSensor: N, TipoMedicion: N, ValorMedicion: Z ) --> esMedicionEntranteValida() --> B
+// cuerpo: MedicionEntrante --> esMedicionEntranteValida() --> B
+// MedicionEntrante = ( IdSensor: N, TipoMedicion: N, ValorMedicion: Z )
 // What it does: returns true if the body has a natural IdSensor, a type 11/12/13 and an integer value.
 // ---------------------------------------------------------------------------
 function esMedicionEntranteValida(cuerpo) {
@@ -37,8 +38,9 @@ function esMedicionEntranteValida(cuerpo) {
 }
 
 // ---------------------------------------------------------------------------
-// JSON( IdSensor: N, TipoMedicion: N, ValorMedicion: Z ) --> POST /guardarMedicion --> EXITO | ERROR
+// peticion: PeticionHTTP --> rutaGuardarMedicion() --> EXITO | ERROR      (POST /guardarMedicion)
 //
+// peticion.body = MedicionEntrante = ( IdSensor: N, TipoMedicion: N, ValorMedicion: Z )
 // EXITO = 201 { resultado: "ok" }
 // ERROR = 400 (faltan datos o no son válidos) | 500 { error: Text }
 // El Timestamp no se recibe: lo genera la lógica del negocio.
@@ -61,10 +63,9 @@ async function rutaGuardarMedicion(peticion, respuesta) {
 }
 
 // ---------------------------------------------------------------------------
-// GET /recuperarUltimaMedicion --> JSON( IdSensor: N, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )
-//                                | ERROR
+// peticion: PeticionHTTP --> rutaRecuperarUltimaMedicion() --> Medicion | ERROR   (GET /recuperarUltimaMedicion)
 //
-// JSON  = 200
+// Medicion = ( IdSensor: N, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z ), con código 200
 // ERROR = 404 (todavía no hay mediciones) | 500 { error: Text }
 // What it does: (GET /recuperarUltimaMedicion) returns the last measurement: 200, 404 if none, 500 error.
 // ---------------------------------------------------------------------------
@@ -81,9 +82,10 @@ async function rutaRecuperarUltimaMedicion(peticion, respuesta) {
 }
 
 // ---------------------------------------------------------------------------
-// error: Error --> responderJSONMalFormado() -->
+// error: Error, peticion: PeticionHTTP --> responderJSONMalFormado() --> ERROR
 //
 // Convierte un JSON mal formado en el cuerpo en una respuesta 400 en JSON.
+// (siguiente es el callback de Express para pasar otros errores; se omite en la notación)
 // What it does: if the body is broken JSON, answers 400 in JSON instead of an HTML error page.
 // ---------------------------------------------------------------------------
 function responderJSONMalFormado(error, peticion, respuesta, siguiente) {

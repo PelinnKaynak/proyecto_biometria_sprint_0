@@ -32,10 +32,15 @@ RespuestaREST = ( codigo: Z, cuerpo: Text )
                                     | URL_SERVIDOR: Text
                                     | CODIGO_EXITO: Z
                                     |
+                                    |
                                     |    idSensor: N, tipoMedicion: N, valorMedicion: Z --> crearJSON() --x
                                     |    Text <--
+                                    |
+                                    |
                                     |    codigo: Z --> esExito() --x
                                     |    B <--
+                                    |
+                                    |
                                     |    codigo: Z, cuerpoRespuesta: Text --> notificarResultado() --x
                                     |
                                     |
@@ -60,11 +65,14 @@ Firma idéntica a la del backend:
                                     | elMetodo: Text
                                     | urlDestino: Text
                                     | elCuerpo: Text
-                                    | laRespuesta: RespuestaREST   (callback)
+                                    | laRespuesta: RespuestaREST
                                     | codigoRespuesta: Z
                                     | cuerpoRespuesta: Text
                                     |
+                                    |
                                     |    B <-- doInBackground() -->
+                                    |
+                                    |
                                     |    comoFue: B --> onPostExecute() -->
                                     |
                                     |
@@ -83,10 +91,12 @@ Firma idéntica a la del backend:
 
 ## 2. Aclaraciones del diseño
 
+- **Nombres en mayúsculas:** `URL_SERVIDOR` y `CODIGO_EXITO` son constantes (`static final`); en Java las constantes se escriben en mayúsculas.
+- **Atributo que guarda un callback:** `laRespuesta` (`RespuestaREST`) guarda el callback que recibe `hacerPeticionREST()`. La notación omite el callback como parámetro, pero es un atributo de la clase que existe en el código, así que se dibuja dentro de la caja.
 - **guardarMedicion()** recibe `idSensor` (natural), `tipoMedicion` (natural) y `valorMedicion` (entero), crea el JSON `{"IdSensor": ..., "TipoMedicion": ..., "ValorMedicion": ...}` con `crearJSON()` y lo envía a `POST /guardarMedicion` con un `PeticionarioREST`. **No** incluye el `Timestamp` (lo genera el backend). No accede a la base de datos ni a la lógica del negocio del backend.
 - **Resultado (igual que en el backend):** `guardarMedicion()` no devuelve ningún dato. `esExito(codigo)` es `true` solo si `codigo == 201`. Si es así se llama a `guardada()` del callback; cualquier otro código (400, 404, 500, o 0 si no hay conexión) se trata como un error y se llama a `error(mensaje)`, que hace el papel de la excepción del backend. El callback (interfaz `RespuestaGuardarMedicion`) no se dibuja como parámetro, según la notación de la asignatura.
 - **notificarResultado():** recibe el código y el cuerpo de la respuesta del servidor y llama a `guardada()` (si `esExito(codigo)`) o a `error(mensaje)` del callback de `guardarMedicion()`.
-- **Privados y estáticos:** `crearJSON()`, `esExito()`, `notificarResultado()`, `URL_SERVIDOR` y `CODIGO_EXITO` son privados de la clase; los tres métodos son estáticos (`--x`). En Java tienen visibilidad de paquete para poder probarlos con JUnit.
+- **Privados y estáticos:** `crearJSON()`, `esExito()`, `notificarResultado()`, `URL_SERVIDOR` y `CODIGO_EXITO` son privados de la clase; los tres métodos son estáticos (`--x`). En Java son `private`; los tests los llaman con reflexión (`setAccessible`), así el código tiene la misma visibilidad que el diseño.
 - **Visibilidad en Java de PeticionarioREST:** `doInBackground()` y `onPostExecute()` son privados en el diseño (los llama `AsyncTask`, no otras clases), aunque en Java se declaran `protected` porque sobrescriben métodos de `AsyncTask`.
 - **Nombres:** los parámetros siguen la convención de la asignatura (minúsculas: `idSensor`, `tipoMedicion`, `valorMedicion`); las claves del JSON (`IdSensor`, `TipoMedicion`, `ValorMedicion`) son los nombres de las columnas de la tabla `Mediciones` (`database_design.md`).
 - **URL_SERVIDOR:** en el emulador de Android Studio es `http://10.0.2.2:8080` (el ordenador que ejecuta el emulador). En un teléfono real es la IPv4 del ordenador en la misma Wi‑Fi o punto de acceso, por ejemplo `http://172.20.10.2:8080`.

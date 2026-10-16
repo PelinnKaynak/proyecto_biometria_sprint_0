@@ -27,12 +27,19 @@ import android.util.Log;
 public class PeticionarioREST extends AsyncTask<Void, Void, Boolean> {
 
     // --------------------------------------------------------------------
+    // RespuestaREST = ( codigo: Z, cuerpo: Text ): respuesta del servidor que
+    // se entrega con este callback (el callback se omite en la notación)
     // --------------------------------------------------------------------
     public interface RespuestaREST {
+        // ------------------------------------------------------------
+        // codigo: Z, cuerpo: Text --> callback() -->
+        // What it does: receives the answer code and body when the request ends.
+        // ------------------------------------------------------------
         void callback (int codigo, String cuerpo);
     }
 
     // --------------------------------------------------------------------
+    // Atributos
     // --------------------------------------------------------------------
     private String elMetodo;
     private String urlDestino;

@@ -3,10 +3,15 @@
 // Descripción: Actividad principal: escanea los beacons BLE y envía las mediciones de nuestra placa al servidor REST mediante LogicaFakeTelefono.
 //              Diseño en doc/android_design.md.
 // Autor:       Jordi Bataller i Mascarell (código original proporcionado)
-// Aportación:  Pelin Kaynak (30/09/2026) - procesarTramaDetectada(): extrae la
-//              medición del beacon y la envía al servidor con LogicaFakeTelefono;
-//              petición de permisos Bluetooth en Android 12+; cabeceras de
-//              fichero y de función con el diseño lógico
+// Aportación:  Pelin Kaynak
+//              (30/09/2026) procesarTramaDetectada(): extrae la medición del
+//              beacon y la envía al servidor con LogicaFakeTelefono; petición de
+//              permisos Bluetooth; cabeceras de fichero y de función con el
+//              diseño lógico
+//              (13-15/10/2026) IdSensor en el UUID; lectura del iBeacon por los
+//              datos del fabricante; permisos en Android 11 o anterior; última
+//              medición y estado en la pantalla; reinicio del escaneo cada 10 s
+//              Los cambios en el código original están marcados con (NUEVO).
 // Copyright:   (c) Jordi Bataller i Mascarell - EPSG-UPV
 // ---------------------------------------------------------------------------
 package com.pelinkaynak.biometria;
@@ -36,7 +41,6 @@ import android.view.View;
 import android.widget.TextView;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -49,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     // --------------------------------------------------------------
+    // Constantes
     // --------------------------------------------------------------
     private static final String ETIQUETA_LOG = ">>>>";
 
@@ -63,6 +68,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int ID_FABRICANTE_APPLE = 0x004C;
 
     // --------------------------------------------------------------
+    // Atributos
     // --------------------------------------------------------------
     private BluetoothLeScanner elEscanner;
 
@@ -92,6 +98,10 @@ public class MainActivity extends AppCompatActivity {
     private static final long INTERVALO_REINICIO_ESCANEO = 10000;
     private final Handler elTemporizador = new Handler(Looper.getMainLooper());
     private final Runnable reinicioDelEscaneo = new Runnable() {
+        // ------------------------------------------------------------
+        // run() -->
+        // What it does: (timer, every 10 s) restarts the scan with reiniciarEscaneo().
+        // ------------------------------------------------------------
         @Override
         public void run() {
             reiniciarEscaneo();
@@ -122,6 +132,10 @@ public class MainActivity extends AppCompatActivity {
         Log.d(ETIQUETA_LOG, " buscarTodosLosDispositivosBTL(): instalamos scan callback ");
 
         this.callbackDelEscaneo = new ScanCallback() {
+            // ------------------------------------------------------------
+            // callbackType: Z, resultado: ScanResult --> onScanResult() -->
+            // What it does: (Android calls it for each packet found) writes the device in the log.
+            // ------------------------------------------------------------
             @Override
             public void onScanResult(int callbackType, ScanResult resultado) {
                 super.onScanResult(callbackType, resultado);
@@ -130,6 +144,10 @@ public class MainActivity extends AppCompatActivity {
                 mostrarInformacionDispositivoBTLE(resultado);
             }
 
+            // ------------------------------------------------------------
+            // results: [ ScanResult ] --> onBatchScanResults() -->
+            // What it does: (Android calls it with a group of packets) only writes it in the log.
+            // ------------------------------------------------------------
             @Override
             public void onBatchScanResults(List<ScanResult> results) {
                 super.onBatchScanResults(results);
@@ -137,6 +155,10 @@ public class MainActivity extends AppCompatActivity {
 
             }
 
+            // ------------------------------------------------------------
+            // errorCode: Z --> onScanFailed() -->
+            // What it does: (Android calls it if the scan cannot start) writes it in the log.
+            // ------------------------------------------------------------
             @Override
             public void onScanFailed(int errorCode) {
                 super.onScanFailed(errorCode);
@@ -254,6 +276,10 @@ public class MainActivity extends AppCompatActivity {
         // super.onScanResult(ScanSettings.SCAN_MODE_LOW_LATENCY, result); para ahorro de energía
 
         this.callbackDelEscaneo = new ScanCallback() {
+            // ------------------------------------------------------------
+            // callbackType: Z, resultado: ScanResult --> onScanResult() -->
+            // What it does: (Android calls it for each packet found) processes it with procesarTramaDetectada().
+            // ------------------------------------------------------------
             @Override
             public void onScanResult(int callbackType, ScanResult resultado) {
                 super.onScanResult(callbackType, resultado);
@@ -266,6 +292,10 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
 
+            // ------------------------------------------------------------
+            // results: [ ScanResult ] --> onBatchScanResults() -->
+            // What it does: (Android calls it with a group of packets) only writes it in the log.
+            // ------------------------------------------------------------
             @Override
             public void onBatchScanResults(List<ScanResult> results) {
                 super.onBatchScanResults(results);
@@ -273,6 +303,10 @@ public class MainActivity extends AppCompatActivity {
 
             }
 
+            // ------------------------------------------------------------
+            // errorCode: Z --> onScanFailed() -->
+            // What it does: (Android calls it if the scan cannot start) shows the error code on the screen.
+            // ------------------------------------------------------------
             @Override
             public void onScanFailed(int errorCode) {
                 super.onScanFailed(errorCode);
@@ -320,40 +354,28 @@ public class MainActivity extends AppCompatActivity {
     // --------------------------------------------------------------
     // resultado: ScanResult --> procesarTramaDetectada() -->          (NUEVO)
     //
-    // Saca la trama iBeacon de los datos del fabricante Apple (0x004C) del
-    // anuncio: 02 15 + UUID (16) + major (2) + minor (2) + txPower (1). Así no
-    // depende de en qué posición del anuncio la pone cada teléfono (TramaIBeacon
-    // supone posiciones fijas y en algunos teléfonos no coinciden). Deshace la
-    // codificación del Arduino (UUID = prefijo + IdSensor,
-    // major = tipo * 256 + contador, minor = valor) y, si la trama es de una placa del proyecto y trae un
-    // contador nuevo para ese sensor, envía IdSensor, TipoMedicion y
+    // Toma los datos del fabricante Apple (0x004C) del anuncio y los lee con
+    // MedicionIBeacon.desdeDatosFabricante() (así no depende de en qué posición
+    // del anuncio la pone cada teléfono; TramaIBeacon supone posiciones fijas).
+    // Si la trama es de una placa del proyecto y trae un contador nuevo para ese
+    // sensor, la muestra en la pantalla y envía IdSensor, TipoMedicion y
     // ValorMedicion al servidor con laLogica.guardarMedicion().
-    // What it does: if the packet is from one of our boards and has a new counter for that sensor,
-    //               gets the sensor id (last 2 UUID bytes), type (major byte 1), counter (major byte 2)
-    //               and value (minor) and sends them to the server.
+    // What it does: reads the packet with MedicionIBeacon; if it is from one of our boards and has
+    //               a new counter for that sensor, shows it on the screen and sends it to the server.
     // --------------------------------------------------------------
     private void procesarTramaDetectada(ScanResult resultado) {
         if (resultado.getScanRecord() == null) {
             return;
         }
         byte[] datos = resultado.getScanRecord().getManufacturerSpecificData(ID_FABRICANTE_APPLE);
-        if (datos == null || datos.length < 22 || datos[0] != 0x02 || datos[1] != 0x15) {
-            return; // no es una trama iBeacon
+        MedicionIBeacon medicion = MedicionIBeacon.desdeDatosFabricante(datos, PREFIJO_UUID_NUESTROS_BEACONS);
+        if (medicion == null) {
+            return; // no es una trama iBeacon de una placa del proyecto
         }
-
-        byte[] uuid = Arrays.copyOfRange(datos, 2, 18);   // 16 bytes
-        byte[] major = Arrays.copyOfRange(datos, 18, 20); // 2 bytes
-        byte[] minor = Arrays.copyOfRange(datos, 20, 22); // 2 bytes
-        String prefijo = Utilidades.bytesToString(Arrays.copyOfRange(uuid, 0, 14));
-        if (!PREFIJO_UUID_NUESTROS_BEACONS.equals(prefijo)) {
-            Log.d(ETIQUETA_LOG, " procesarTramaDetectada(): no es nuestro beacon, UUID = " + Utilidades.bytesToString(uuid));
-            return;
-        }
-        int idSensor = ((uuid[14] & 0xFF) << 8) | (uuid[15] & 0xFF); // 2 últimos bytes del UUID
-
-        int tipoMedicion = major[0] & 0xFF;                          // byte alto de major
-        int contador = major[1] & 0xFF;                              // byte bajo de major
-        int valorMedicion = Utilidades.bytesToInt(minor);                 // minor
+        int idSensor = medicion.getIdSensor();
+        int tipoMedicion = medicion.getTipoMedicion();
+        int contador = medicion.getContador();
+        int valorMedicion = medicion.getValorMedicion();
 
         Integer ultimoContador = this.ultimoContadorPorSensor.get(idSensor);
         if (ultimoContador != null && ultimoContador == contador) {
@@ -369,6 +391,10 @@ public class MainActivity extends AppCompatActivity {
 
         this.laLogica.guardarMedicion(idSensor, tipoMedicion, valorMedicion,
                 new LogicaFakeTelefono.RespuestaGuardarMedicion() {
+                    // ------------------------------------------------------------
+                    // guardada() -->
+                    // What it does: (the server saved the measurement) counts it and shows "Guardada en el servidor".
+                    // ------------------------------------------------------------
                     @Override
                     public void guardada() {
                         Log.d(ETIQUETA_LOG, " procesarTramaDetectada(): guardada en el servidor = true");
@@ -377,6 +403,10 @@ public class MainActivity extends AppCompatActivity {
                         mostrarEstadoBusqueda();
                     }
 
+                    // ------------------------------------------------------------
+                    // mensaje: Text --> error() -->
+                    // What it does: (the measurement could not be saved) shows the reason on the screen.
+                    // ------------------------------------------------------------
                     @Override
                     public void error(String mensaje) {
                         Log.d(ETIQUETA_LOG, " procesarTramaDetectada(): guardada en el servidor = false (" + mensaje + ")");
@@ -586,8 +616,6 @@ public class MainActivity extends AppCompatActivity {
     } // ()
 
 
-    // --------------------------------------------------------------
-    // --------------------------------------------------------------
     // ------------------------------------------------------------
     // texto: Text --> mostrarEstado() -->          (NUEVO)
     // What it does: writes the text in the log and shows it on the screen (what is happening now).

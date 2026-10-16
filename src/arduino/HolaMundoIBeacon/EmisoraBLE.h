@@ -143,9 +143,8 @@ public:
 	//
 	(*this).detenerAnuncio();
 	
-	// (NUEVO) se borran los datos del anuncio anterior: si no, en cada loop
-	// los datos nuevos se añaden detrás de los viejos, no caben en el anuncio
-	// (31 bytes) y la placa sigue emitiendo la primera trama (mismo contador)
+	// (NUEVO) se borran los datos del anuncio anterior, para que cada
+	// anuncio lleve solo los datos de la medición nueva
 	Bluefruit.Advertising.clearData();
 	Bluefruit.ScanResponse.clearData();
 	

@@ -16,6 +16,10 @@ Regla del subconjunto: la GUI solo necesita consultar la última medición, así
 TipoMedicion = { CO2 = 11, TEMPERATURA = 12, RUIDO = 13 }
 
 Medicion = ( IdSensor: N, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )
+
+vacío = ausencia de valor (en JavaScript, null)
+
+A | B = un valor de tipo A o un valor de tipo B
 ```
 
 ### Clase LogicaFakeNavegador
@@ -33,12 +37,13 @@ Firma idéntica a la del backend:
 
 | Método | `business_logic_design.md` (LogicaDeNegocio) | Este componente (LogicaFakeNavegador) |
 |---|---|---|
-| `recuperarUltimaMedicion()` | `recuperarUltimaMedicion() --> Medicion \| vacío` | `recuperarUltimaMedicion() --> Medicion \| vacío` |
+| `recuperarUltimaMedicion()` | `Medicion \| vacío <-- recuperarUltimaMedicion() <--` | `Medicion \| vacío <-- recuperarUltimaMedicion() <--` |
 
 ---
 
 ## 2. Aclaraciones del diseño
 
+- **Nombres:** los campos de `Medicion` empiezan por mayúscula porque son las claves del JSON y las columnas de la tabla `Mediciones` (`database_design.md`).
 - **Implementación proxy:** `recuperarUltimaMedicion()` hace `GET /recuperarUltimaMedicion` (definido en `communication_design.md`) con una URL relativa, es decir, al mismo servidor que sirvió la página. Por eso no hay ninguna IP escrita en el código.
 - **Traducción de la respuesta a tipos de dominio:** la respuesta con la medición se devuelve como `Medicion`; la respuesta "todavía no hay mediciones" se devuelve como **vacío** (`null`). Los detalles de transporte quedan dentro de este componente: la GUI no los conoce.
 - **Errores:** si no se puede contactar con el servidor o este falla, el método lanza un error con un texto descriptivo (por ejemplo *"No se puede conectar con el servidor"*). En el diseño lógico no se representa, igual que en el backend.

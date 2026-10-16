@@ -34,7 +34,7 @@
 // alReves() utilidad
 // pone al revés el contenido de una array en el mismo array
 // ------------------------------------------------------------
-// p: [T], n: N --> alReves() --> [T]
+// p: [N], n: N --> alReves() --> [N]        (plantilla: sirve para cualquier tipo)
 // What it does: reverses an array in place ([1,2,3] -> [3,2,1]). Not used in Sprint 0.
 // ------------------------------------------------------------
 template< typename T >

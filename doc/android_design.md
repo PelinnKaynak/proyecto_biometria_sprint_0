@@ -12,12 +12,19 @@ App Android (GUI del teléfono) que escucha las tramas iBeacon de nuestra placa 
 Escáner BLE --> MainActivity.procesarTramaDetectada() --> LogicaFakeTelefono.guardarMedicion()
 ```
 
-Las clases `MainActivity`, `TramaIBeacon` y `Utilidades` son **código proporcionado** (ingeniería inversa). En `MainActivity` se **añaden** los elementos marcados con `(NUEVO)` para conectar el escaneo con la lógica del cliente.
+Las clases `MainActivity`, `TramaIBeacon` y `Utilidades` son **código proporcionado** (ingeniería inversa). En `MainActivity` se **añaden** los elementos marcados con `(NUEVO)` para conectar el escaneo con la lógica del cliente. La clase `MedicionIBeacon` es **nueva**: lee la medición de los bytes de la trama.
 
 ### Tipos
 
 ```text
 TipoMedicion = { CO2 = 11, TEMPERATURA = 12, RUIDO = 13 }
+
+vacío = ausencia de valor (en Java, null)
+
+A | B = un valor de tipo A o un valor de tipo B
+
+Tipos externos (opacos, clases de Android): BluetoothLeScanner, ScanCallback, ScanResult,
+    Bundle, View, TextView, Handler, Runnable
 ```
 
 ### Clase MainActivity (proporcionada + ampliada)
@@ -42,16 +49,37 @@ TipoMedicion = { CO2 = 11, TEMPERATURA = 12, RUIDO = 13 }
                                     | elTemporizador: Handler                    (NUEVO)
                                     | reinicioDelEscaneo: Runnable               (NUEVO)
                                     |
+                                    |
                                     |    buscarTodosLosDispositivosBTLE() -->
+                                    |
+                                    |
                                     |    resultado: ScanResult --> mostrarInformacionDispositivoBTLE() -->
+                                    |
+                                    |
                                     |    prefijoUUID: Text --> buscarEsteDispositivoBTLE() -->
+                                    |
+                                    |
                                     |    detenerBusquedaDispositivosBTLE() -->
+                                    |
+                                    |
                                     |    inicializarBlueTooth() -->
-                                    |    resultado: ScanResult --> procesarTramaDetectada() -->   (NUEVO)
-                                    |    B <-- tienePermisosBluetooth() <--                       (NUEVO)
-                                    |    texto: Text --> mostrarEstado() -->                      (NUEVO)
-                                    |    mostrarEstadoBusqueda() -->                              (NUEVO)
-                                    |    reiniciarEscaneo() -->                                   (NUEVO)
+                                    |
+                                    |
+                                    |    resultado: ScanResult --> procesarTramaDetectada() -->        (NUEVO)
+                                    |
+                                    |
+                                    |    B <-- tienePermisosBluetooth() <--                            (NUEVO)
+                                    |
+                                    |
+                                    |    texto: Text --> mostrarEstado() -->                           (NUEVO)
+                                    |
+                                    |
+                                    |    mostrarEstadoBusqueda() -->                                   (NUEVO)
+                                    |
+                                    |
+                                    |    reiniciarEscaneo() -->                                        (NUEVO)
+                                    |
+                                    |
                                     |    idSensor: N, tipoMedicion: N, valorMedicion: Z,
                                     |      contador: N --> mostrarMedicion() -->                  (NUEVO)
                                     |
@@ -73,6 +101,42 @@ TipoMedicion = { CO2 = 11, TEMPERATURA = 12, RUIDO = 13 }
   grantResults: [ Z ]               |
                                     |
                                     ---------------------------------------------------------
+```
+
+### Clase MedicionIBeacon (NUEVA)
+
+```text
+                                    --------- MedicionIBeacon -----------------------------------
+                                    |
+                                    | idSensor: N
+                                    | tipoMedicion: N
+                                    | contador: N
+                                    | valorMedicion: Z
+                                    | LONGITUD_MINIMA: N
+                                    | LONGITUD_PREFIJO_UUID: N
+                                    |
+                                    |
+                                    |    idSensor: N, tipoMedicion: N, contador: N,
+                                    |    valorMedicion: Z --> MedicionIBeacon() -->
+                                    |
+                                    |
+  datos: [ Z ]                  --> desdeDatosFabricante() --x
+  prefijoUUID: Text                 |
+  MedicionIBeacon | vacío       <-- |
+                                    |
+                                    |
+                     N          <-- getIdSensor() <--
+                                    |
+                                    |
+                     N          <-- getTipoMedicion() <--
+                                    |
+                                    |
+                     N          <-- getContador() <--
+                                    |
+                                    |
+                     Z          <-- getValorMedicion() <--
+                                    |
+                                    -------------------------------------------------------------
 ```
 
 ### Clase TramaIBeacon (proporcionada)
@@ -178,6 +242,8 @@ TipoMedicion = { CO2 = 11, TEMPERATURA = 12, RUIDO = 13 }
 
 ## 2. Aclaraciones del diseño
 
+- **Nombres en mayúsculas:** `ETIQUETA_LOG`, `CODIGO_PETICION_PERMISOS`, `PREFIJO_UUID_NUESTROS_BEACONS`, `ID_FABRICANTE_APPLE`, `INTERVALO_REINICIO_ESCANEO`, `LONGITUD_MINIMA` y `LONGITUD_PREFIJO_UUID` son constantes (`static final`); en Java las constantes se escriben en mayúsculas.
+- **Atributos que guardan un callback:** `callbackDelEscaneo` (`ScanCallback`) y `reinicioDelEscaneo` (`Runnable`) guardan objetos que Android llama más tarde. La notación omite los callbacks como **parámetros**, pero estos son **atributos** de la clase que existen en el código, así que se dibujan dentro de la caja.
 - **procesarTramaDetectada()** se llama desde el callback del escaneo de `buscarEsteDispositivoBTLE()`:
   1. toma los datos del fabricante Apple del anuncio (`getScanRecord().getManufacturerSpecificData(ID_FABRICANTE_APPLE)`, `ID_FABRICANTE_APPLE` = 0x004C); si no existen o no empiezan por `02 15` (tipo y longitud iBeacon), no es una trama iBeacon y no hace nada. Si lo es, separa `uuid` (bytes 2–17), `major` (18–19) y `minor` (20–21). No se usa `TramaIBeacon`, que supone que la trama empieza en una posición fija del anuncio: en las pruebas, con algunos teléfonos esa posición no coincidía y no se reconocía ninguna trama;
   2. si los 14 primeros bytes del `uuid` no son `PREFIJO_UUID_NUESTROS_BEACONS` (`"EPSG-GTI-PELIN"`), no es una placa de este proyecto (por ejemplo, las placas de otros grupos emiten `"EPSG-GTI-PROY-3A"`) y no hace nada; si lo son, `idSensor` = los 2 últimos bytes del UUID (byte alto, byte bajo, 0..65535);
@@ -188,7 +254,8 @@ TipoMedicion = { CO2 = 11, TEMPERATURA = 12, RUIDO = 13 }
 - **UUID del beacon:** solo se usa en el teléfono para reconocer las placas de este proyecto y sacar el `IdSensor`; ya no se envía al servidor.
 - **Limitación conocida:** `ultimoContadorPorSensor` dura mientras la app está abierta. Si una placa se reinicia (su contador vuelve a 1) y el último contador guardado de ese sensor era justo 1, esa primera trama se toma por repetida; la siguiente (contador 2) ya se envía.
 - **Pantalla (`(NUEVO)`):** debajo de los botones hay una tarjeta con dos textos: `textoUltimaMedicion` (la última medición recibida de la placa, p. ej. `IdSensor 1 · CO2 · 123 (contador 5)`) y `textoEstado` (qué está pasando: *Listo*, *Buscando nuestra placa...*, *Enviando la medición al servidor...*, *Guardada en el servidor ✓*, *No se pudo guardar en el servidor: …*, *Faltan permisos…*, *Bluetooth apagado…*, *Error al empezar a buscar (código N)*, *Búsqueda detenida*). Así se ve el recorrido placa → teléfono → servidor sin Logcat. La pantalla está dentro de un `ScrollView` para que un texto largo no quede cortado, y `mostrarEstadoBusqueda()` pone el resultado del último envío en la primera línea. `mostrarEstado()` y `mostrarMedicion()` usan `runOnUiThread()` porque los callbacks del escaneo y de la petición REST pueden llegar desde otro hilo.
-- **Tipos externos (opacos):** `BluetoothLeScanner`, `ScanCallback`, `ScanResult`, `Bundle`, `View` y `TextView` son clases de Android que se usan tal cual; `UUID` (en `Utilidades`) es `java.util.UUID`, equivalente a `[ N ]_16`.
+- **MedicionIBeacon (`(NUEVO)`):** `desdeDatosFabricante(datos, prefijoUUID)` hace los pasos 1–3 de `procesarTramaDetectada()`: comprueba que los datos empiezan por `02 15` y que el UUID empieza por `prefijoUUID`, y lee `idSensor` (2 últimos bytes del UUID), `tipoMedicion` (byte alto de major), `contador` (byte bajo de major) y `valorMedicion` (minor, con signo). Si los datos no son de una placa del proyecto devuelve **vacío** (`null`). Es estático y no depende de Android, así se puede probar con JUnit. El constructor es privado: solo `desdeDatosFabricante()` crea objetos. `procesarTramaDetectada()` lo usa y después hace el paso 4 (contador repetido) y el envío.
+- **Tipos externos (opacos):** `BluetoothLeScanner`, `ScanCallback`, `ScanResult`, `Bundle`, `View`, `TextView`, `Handler` y `Runnable` son clases de Android que se usan tal cual; `UUID` (en `Utilidades`) es `java.util.UUID`, equivalente a `[ N ]_16`.
 - **Visibilidad en Java:** `onCreate()` está en el borde de la caja porque lo llama Android desde fuera de la clase, aunque en Java se declara `protected` (sobrescribe `AppCompatActivity`).
 - **Sin comunicación en la GUI:** `MainActivity` no contiene código HTTP; para guardar usa solo `LogicaFakeTelefono` (`client_business_logic_design.md`).
 - **Permisos (Android 12+):** el código original salía de `inicializarBlueTooth()` sin pedir los permisos `BLUETOOTH_SCAN`/`BLUETOOTH_CONNECT`, así que el escáner nunca se creaba. Ahora, si `tienePermisosBluetooth()` es falso, se piden y `onRequestPermissionsResult()` vuelve a llamar a `inicializarBlueTooth()` cuando se conceden. En versiones anteriores a Android 12 los permisos `BLUETOOTH_SCAN`/`BLUETOOTH_CONNECT` no existen (siempre salen "no concedidos"), así que `tienePermisosBluetooth()` comprueba `ACCESS_FINE_LOCATION`, que es lo que Android necesita para escanear BLE. Por la misma razón, los métodos que escanean ya no usan `checkSelfPermission(BLUETOOTH_SCAN)` (que en Android 11 hacía salir sin escanear) sino `tienePermisosBluetooth()`. `esperandoPermisos` evita pedir los permisos en bucle: `onRequestPermissionsResult()` solo vuelve a llamar a `inicializarBlueTooth()` si los pidió ella. En Android 11 o anterior, además, la **Ubicación** del teléfono debe estar activada para recibir tramas BLE.
@@ -204,6 +271,7 @@ TipoMedicion = { CO2 = 11, TEMPERATURA = 12, RUIDO = 13 }
 - **Cabeceras de funciones/métodos:** cada función o método incluye su diseño lógico en un bloque de comentarios delimitado por líneas discontinuas (`--------------------`), con la notación de la asignatura, y una línea breve en inglés `What it does:` dentro del mismo bloque.
 - **Legibilidad:** el código debe ser lo más claro y autoexplicativo posible (nombres descriptivos en castellano), de forma que casi no necesite comentarios adicionales.
 - **Tests automáticos:** JUnit 4 en `app/src/test/java/` (se ejecutan con `./gradlew test`, sin teléfono):
+  - `MedicionIBeaconTest`: comprueba `desdeDatosFabricante()` con una trama de nuestra placa (IdSensor 1, CO2, contador 5, valor 123), un valor negativo (−12) y un contador mayor que 127, un IdSensor de 2 bytes (258), una trama de otro grupo (prefijo distinto → vacío) y datos que no son iBeacon (→ vacío).
   - `TramaIBeaconTest`: con una trama como la que emite nuestra placa (IdSensor = 1, CO2 = 123, contador 5), comprueba que se separan bien el prefijo y sus partes, el UUID (prefijo del proyecto + IdSensor), el major, el minor y el txPower.
   - `UtilidadesTest`: comprueba `bytesToString` (UUID), `bytesToInt` con signo (123 y −12), `bytesToLong`, `bytesToHexString`, `stringToBytes`, `dosLongToBytes`, que `stringToUUID` y `uuidToString` son inversas y que `stringToUUID` rechaza textos que no tienen 16 caracteres.
   - El envío real al servidor se comprueba en la prueba de funcionamiento de extremo a extremo (criterio de aceptación en el `README.md`).

@@ -20,12 +20,58 @@ import org.junit.Test;
 public class LogicaFakeTelefonoTest {
 
     // ------------------------------------------------------------
+    // nombre: Text, tipos: [ Class ], argumentos: [ Object ] --> llamarPrivado() --> Object   (estático)
+    // What it does: calls a private static method of LogicaFakeTelefono (with reflection) so the
+    //               tests can check crearJSON(), esExito() and notificarResultado().
+    // ------------------------------------------------------------
+    private static Object llamarPrivado(String nombre, Class<?>[] tipos, Object... argumentos) {
+        try {
+            java.lang.reflect.Method metodo = LogicaFakeTelefono.class.getDeclaredMethod(nombre, tipos);
+            metodo.setAccessible(true);
+            return metodo.invoke(null, argumentos);
+        } catch (java.lang.reflect.InvocationTargetException e) {
+            throw new RuntimeException(e.getCause());
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    } // ()
+
+    // ------------------------------------------------------------
+    // idSensor: N, tipoMedicion: N, valorMedicion: Z --> crearJSON() --> Text   (estático)
+    // What it does: calls the private LogicaFakeTelefono.crearJSON().
+    // ------------------------------------------------------------
+    private static String crearJSON(int idSensor, int tipoMedicion, int valorMedicion) {
+        return (String) llamarPrivado("crearJSON", new Class<?>[] { int.class, int.class, int.class },
+                idSensor, tipoMedicion, valorMedicion);
+    } // ()
+
+    // ------------------------------------------------------------
+    // codigo: Z --> esExito() --> B   (estático)
+    // What it does: calls the private LogicaFakeTelefono.esExito().
+    // ------------------------------------------------------------
+    private static boolean esExito(int codigo) {
+        return (Boolean) llamarPrivado("esExito", new Class<?>[] { int.class }, codigo);
+    } // ()
+
+    // ------------------------------------------------------------
+    // codigo: Z, cuerpo: Text --> notificarResultado() -->   (estático; el callback se omite)
+    // What it does: calls the private LogicaFakeTelefono.notificarResultado().
+    // ------------------------------------------------------------
+    private static void notificarResultado(int codigo, String cuerpo,
+                                           LogicaFakeTelefono.RespuestaGuardarMedicion respuesta) {
+        llamarPrivado("notificarResultado",
+                new Class<?>[] { int.class, String.class, LogicaFakeTelefono.RespuestaGuardarMedicion.class },
+                codigo, cuerpo, respuesta);
+    } // ()
+
+
+    // ------------------------------------------------------------
     // elJSONTieneIdSensorTipoMedicionYValorMedicionSinTimestamp() -->
     // What it does: checks the JSON has IdSensor, TipoMedicion and ValorMedicion and no UUID or Timestamp.
     // ------------------------------------------------------------
     @Test
     public void elJSONTieneIdSensorTipoMedicionYValorMedicionSinTimestamp() throws Exception {
-        JSONObject json = new JSONObject(LogicaFakeTelefono.crearJSON(1, 11, 123));
+        JSONObject json = new JSONObject(crearJSON(1, 11, 123));
 
         assertEquals(1, json.getInt("IdSensor"));
         assertFalse(json.has("UUID"));
@@ -41,7 +87,7 @@ public class LogicaFakeTelefonoTest {
     // ------------------------------------------------------------
     @Test
     public void elJSONAdmiteValoresNegativos() throws Exception {
-        JSONObject json = new JSONObject(LogicaFakeTelefono.crearJSON(1, 12, -12));
+        JSONObject json = new JSONObject(crearJSON(1, 12, -12));
         assertEquals(-12, json.getInt("ValorMedicion"));
     }
 
@@ -51,11 +97,11 @@ public class LogicaFakeTelefonoTest {
     // ------------------------------------------------------------
     @Test
     public void el201EsExitoYLosDemasCodigosSonError() {
-        assertTrue(LogicaFakeTelefono.esExito(201));
-        assertFalse(LogicaFakeTelefono.esExito(400));
-        assertFalse(LogicaFakeTelefono.esExito(404));
-        assertFalse(LogicaFakeTelefono.esExito(500));
-        assertFalse(LogicaFakeTelefono.esExito(0)); // sin conexión (codigoRespuesta no se rellena)
+        assertTrue(esExito(201));
+        assertFalse(esExito(400));
+        assertFalse(esExito(404));
+        assertFalse(esExito(500));
+        assertFalse(esExito(0)); // sin conexión (codigoRespuesta no se rellena)
     }
 
     // ------------------------------------------------------------
@@ -91,7 +137,7 @@ public class LogicaFakeTelefonoTest {
     @Test
     public void con201SeLlamaAGuardada() {
         ResultadoApuntado resultado = new ResultadoApuntado();
-        LogicaFakeTelefono.notificarResultado(201, "{\"resultado\":\"ok\"}", resultado);
+        notificarResultado(201, "{\"resultado\":\"ok\"}", resultado);
         assertTrue(resultado.guardada);
         assertNull(resultado.mensajeError);
     }
@@ -103,12 +149,12 @@ public class LogicaFakeTelefonoTest {
     @Test
     public void conOtroCodigoSeLlamaAError() {
         ResultadoApuntado resultado = new ResultadoApuntado();
-        LogicaFakeTelefono.notificarResultado(400, "{\"error\":\"datos\"}", resultado);
+        notificarResultado(400, "{\"error\":\"datos\"}", resultado);
         assertFalse(resultado.guardada);
         assertTrue(resultado.mensajeError.contains("400"));
 
         ResultadoApuntado sinConexion = new ResultadoApuntado();
-        LogicaFakeTelefono.notificarResultado(0, "", sinConexion);
+        notificarResultado(0, "", sinConexion);
         assertFalse(sinConexion.guardada);
         assertTrue(sinConexion.mensajeError.contains("0"));
     }

@@ -46,7 +46,7 @@ public:
   } // ()
 
   // ------------------------------------------------------------
-  // mensaje: T --> escribir() -->
+  // mensaje: Text --> escribir() -->        (plantilla: también acepta números)
   // What it does: writes 'mensaje' (text or number) on the Serial Monitor.
   // ------------------------------------------------------------
   template<typename T>

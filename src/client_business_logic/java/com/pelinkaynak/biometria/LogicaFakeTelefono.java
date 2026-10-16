@@ -30,7 +30,16 @@ public class LogicaFakeTelefono {
     // del error con un texto (error()), como la excepción del backend.
     // -----------------------------------------------------------------------
     public interface RespuestaGuardarMedicion {
+        // ------------------------------------------------------------
+        // guardada() -->
+        // What it does: called when the server answered 201 (measurement saved).
+        // ------------------------------------------------------------
         void guardada();
+
+        // ------------------------------------------------------------
+        // mensaje: Text --> error() -->
+        // What it does: called when the measurement could not be saved, with the reason.
+        // ------------------------------------------------------------
         void error(String mensaje);
     }
 
@@ -65,7 +74,7 @@ public class LogicaFakeTelefono {
     // (el callback respuesta se omite en la notación)
     // What it does: calls guardada() if the code is 201, or error() with the code and body if not.
     // -----------------------------------------------------------------------
-    static void notificarResultado(int codigo, String cuerpoRespuesta,
+    private static void notificarResultado(int codigo, String cuerpoRespuesta,
                                    RespuestaGuardarMedicion respuesta) {
         if (esExito(codigo)) {
             respuesta.guardada();
@@ -78,7 +87,7 @@ public class LogicaFakeTelefono {
     // idSensor: N, tipoMedicion: N, valorMedicion: Z --> crearJSON() --> Text     (privado, estático)
     // What it does: builds {"IdSensor":..., "TipoMedicion":..., "ValorMedicion":...} (no Timestamp).
     // -----------------------------------------------------------------------
-    static String crearJSON(int idSensor, int tipoMedicion, int valorMedicion)
+    private static String crearJSON(int idSensor, int tipoMedicion, int valorMedicion)
             throws JSONException {
         JSONObject json = new JSONObject();
         json.put("IdSensor", idSensor);
@@ -91,7 +100,7 @@ public class LogicaFakeTelefono {
     // codigo: Z --> esExito() --> B                                            (privado, estático)
     // What it does: returns true only if the answer code is 201 (saved).
     // -----------------------------------------------------------------------
-    static boolean esExito(int codigo) {
+    private static boolean esExito(int codigo) {
         return codigo == CODIGO_EXITO;
     }
 }

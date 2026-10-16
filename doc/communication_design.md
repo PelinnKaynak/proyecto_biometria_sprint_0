@@ -11,15 +11,18 @@ Componente de comunicación del backend: un servidor REST. Es la puerta de entra
 ### Tipos
 
 ```text
-JSON de entrada  = ( IdSensor: N, TipoMedicion: N, ValorMedicion: Z )
+MedicionEntrante = ( IdSensor: N, TipoMedicion: N, ValorMedicion: Z )                (cuerpo JSON de POST /guardarMedicion)
 
-JSON de salida   = ( IdSensor: N, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )
+Medicion = ( IdSensor: N, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )       (cuerpo JSON de la respuesta de GET /recuperarUltimaMedicion)
 
-ServidorHTTP = servidor HTTP de Node.js (tipo externo opaco; permite consultar el puerto y cerrarlo)
+EXITO = ( codigo: N, resultado: Text )        codigo = 201, resultado = "ok"
 
-EXITO = 201 ( resultado: "ok" )
+ERROR = ( codigo: N, error: Text )            codigo = 400, 404 o 500
 
-ERROR = 400 | 404 | 500 ( error: Text )
+A | B = un valor de tipo A o un valor de tipo B
+
+Tipos externos (opacos): ServidorHTTP (servidor HTTP de Node.js), PeticionHTTP (petición de Express),
+                         Error (error de JavaScript)
 ```
 
 ### Servidor REST
@@ -29,26 +32,37 @@ ERROR = 400 | 404 | 500 ( error: Text )
                                    |
                                    | logica: LogicaDeNegocio
                                    | elServidorHTTP: ServidorHTTP
+                                   | TIPOS_VALIDOS: [ N ]
+                                   | CARPETA_GUI: Text
+                                   | CARPETA_LOGICA_FAKE: Text
                                    |
-                                   |    cuerpo: JSON --> esMedicionEntranteValida() --x
+                                   |
+                                   |    cuerpo: MedicionEntrante --> esMedicionEntranteValida() --x
                                    |    B <--
-                                   |    error: Error --> responderJSONMalFormado() -->   (JSON mal formado -> 400)
                                    |
                                    |
-  JSON( IdSensor: N,           --> POST /guardarMedicion -->
-        TipoMedicion: N,           |
-        ValorMedicion: Z )         |
+                                   |    peticion: PeticionHTTP --> rutaGuardarMedicion() -->
+                                   |    EXITO | ERROR <--
+                                   |
+                                   |
+                                   |    peticion: PeticionHTTP --> rutaRecuperarUltimaMedicion() <--
+                                   |    Medicion | ERROR <--
+                                   |
+                                   |
+                                   |    error: Error, peticion: PeticionHTTP --> responderJSONMalFormado() --x
+                                   |    ERROR <--
+                                   |
+                                   |
+  m: MedicionEntrante          --> POST /guardarMedicion -->
   EXITO | ERROR                <-- |
                                    |
                                    |
-  JSON( IdSensor: N,           <-- GET /recuperarUltimaMedicion <--
-        Timestamp: Text,           |
-        TipoMedicion: N,           |
-        ValorMedicion: Z ) | ERROR |
+  Medicion | ERROR             <-- GET /recuperarUltimaMedicion <--
                                    |
                                    |
   puerto: N, nombreBD: Text    --> arrancarServidor() -->
   ServidorHTTP                 <-- |
+                                   |
                                    |
                                    pararServidor() -->
                                    |
@@ -68,14 +82,17 @@ Todas las respuestas de error tienen la forma `{"error": "<descripción>"}`.
 
 ## 2. Aclaraciones del diseño
 
+- **Nombres en mayúsculas:** `TIPOS_VALIDOS`, `CARPETA_GUI`, `CARPETA_LOGICA_FAKE`, `PUERTO` y `NOMBRE_BD` son constantes; en JavaScript las constantes se escriben en mayúsculas.
 - **logica** es una instancia **privada** de `LogicaDeNegocio`, creada en `arrancarServidor()` con el `nombreBD` recibido. **elServidorHTTP** (privado) guarda el servidor que devuelve `arrancarServidor()`, para que `pararServidor()` pueda cerrarlo.
 - **POST /guardarMedicion:** recibe un JSON con `IdSensor` (número natural), `TipoMedicion` (11, 12 o 13) y `ValorMedicion` (entero) y llama a `guardarMedicion()` de `LogicaDeNegocio`. Si falta alguno o no es válido → `400`; si la lógica falla por otro motivo → `500`. El `Timestamp` **no** se recibe del cliente (si llega, se ignora): lo genera la lógica del negocio.
 - **GET /recuperarUltimaMedicion:** llama a `recuperarUltimaMedicion()` de `LogicaDeNegocio` y devuelve el JSON con `IdSensor`, `Timestamp`, `TipoMedicion` y `ValorMedicion`. Si la lógica devuelve vacío (tabla sin datos) → `404`; si falla → `500`.
 - **Página web:** el mismo servidor sirve los ficheros estáticos de la GUI (`src/gui/`, ver `gui_design.md`) en la ruta `/` y la lógica fake del navegador (`src/frontend_business_logic/`, ver `frontend_business_logic_design.md`) en la ruta `/frontend_business_logic/`. Así la página y la API tienen el mismo origen y no hacen falta cabeceras CORS.
 - **Configuración:** el puerto por defecto es `8080` y la base de datos por defecto es `mediciones.db`; se pueden cambiar con las variables de entorno `PUERTO` y `NOMBRE_BD`. El servidor escucha en todas las interfaces (`0.0.0.0`) para que el teléfono lo alcance desde la misma red Wi‑Fi.
 - **arrancarServidor() / pararServidor():** existen para que los tests puedan levantar y parar el servidor con una base de datos temporal. `pararServidor()` también cierra la lógica.
-- **Fichero de arranque:** `src/communication/mainServidorREST.js` tiene solo la función `main()`, que llama a `arrancarServidor()` y, al pulsar Ctrl+C, a `pararServidor()` (se ejecuta con `npm run servidor`).
-- **Funciones privadas:** `esMedicionEntranteValida()` hace las comprobaciones del `POST`; `responderJSONMalFormado()` convierte un cuerpo que no es JSON válido en una respuesta `400` con `{"error": ...}` en vez de la página de error por defecto de Express.
+- **Fichero de arranque:** `src/communication/mainServidorREST.js` tiene solo la función `main() -->` y las constantes `PUERTO: N` y `NOMBRE_BD: Text`. `main()` llama a `arrancarServidor()` y, al pulsar Ctrl+C, a `pararServidor()` (se ejecuta con `npm run servidor`).
+- **Funciones privadas:** `rutaGuardarMedicion()` y `rutaRecuperarUltimaMedicion()` son las funciones que atienden `POST /guardarMedicion` y `GET /recuperarUltimaMedicion` (la respuesta HTTP que escriben es su salida: `EXITO | ERROR` o `Medicion | ERROR`). `esMedicionEntranteValida()` hace las comprobaciones del `POST`. `responderJSONMalFormado()` convierte un cuerpo que no es JSON válido en una respuesta `400` con `{"error": ...}` en vez de la página de error por defecto de Express; su último parámetro (`siguiente`, para pasar otros errores a Express) es un callback y no se dibuja.
+- **Constantes privadas:** `TIPOS_VALIDOS` = `[11, 12, 13]`; `CARPETA_GUI` y `CARPETA_LOGICA_FAKE` son las carpetas `src/gui/` y `src/frontend_business_logic/`.
+- **Nombres:** los campos de `MedicionEntrante` y `Medicion` empiezan por mayúscula porque son las claves del JSON y las columnas de la tabla `Mediciones` (`database_design.md`); así el nombre es el mismo en todo el sistema.
 
 ---
 

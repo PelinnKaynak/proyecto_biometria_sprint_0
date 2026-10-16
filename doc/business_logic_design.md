@@ -14,6 +14,13 @@ La lógica del negocio es la única parte del sistema que accede a la base de da
 TipoMedicion = { CO2 = 11, TEMPERATURA = 12, RUIDO = 13 }
 
 Medicion = ( IdSensor: N, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )
+
+vacío = ausencia de valor (en JavaScript, null)
+
+A | B = un valor de tipo A o un valor de tipo B
+
+Tipos externos (opacos): ConexionSQLite (conexión de la biblioteca sqlite3),
+                         Promesa (Promise de JavaScript)
 ```
 
 ### Clase LogicaDeNegocio
@@ -23,6 +30,8 @@ Medicion = ( IdSensor: N, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )
                           |
                           | laConexion: ConexionSQLite
                           | baseDeDatosAbierta: Promesa
+                          | SCRIPT_CREACION: Text
+                          | TIPOS_VALIDOS: [ N ]
                           |
                           |    nombreBD: Text --> abrirBaseDeDatos() -->
                           |
@@ -51,6 +60,7 @@ Medicion = ( IdSensor: N, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )
 
 ## 2. Aclaraciones del diseño
 
+- **Constantes privadas:** en el código son constantes del módulo `LogicaDeNegocio.js` (fuera de la clase, no se exportan), por eso se dibujan como privadas. `SCRIPT_CREACION` es la ruta del script `src/database/crearBaseDeDatos.sql` y `TIPOS_VALIDOS` = `[11, 12, 13]`. Se escriben en mayúsculas porque son constantes (convención de JavaScript).
 - **laConexion** y **baseDeDatosAbierta** son privadas (dentro de la caja), igual que `abrirBaseDeDatos()`. `ConexionSQLite` es la conexión de la biblioteca `sqlite3` (tipo externo opaco). `baseDeDatosAbierta` es la promesa de que la conexión está abierta y la tabla creada; los demás métodos la esperan antes de usar la base de datos.
 - **Nombres:** los parámetros siguen la convención de la asignatura (minúsculas: `idSensor`, `tipoMedicion`, `valorMedicion`). Los campos de `Medicion` (`IdSensor`, `Timestamp`, `TipoMedicion`, `ValorMedicion`) se llaman exactamente como las columnas de la tabla `Mediciones`.
 - **vacío:** indica que no hay ninguna `Medicion` (en JavaScript, `null`).
