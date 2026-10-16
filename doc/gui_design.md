@@ -43,8 +43,9 @@ Medicion = ( IdSensor: N, Timestamp: Text, TipoMedicion: N, ValorMedicion: Z )
 
 ```text
 laLogicaFake: LogicaFakeNavegador
-NOMBRES_TIPO_MEDICION = { 11: "CO2", 12: "Temperatura", 13: "Ruido" }
-FORMATO_FECHA: formato de fecha y hora local (dd/mm/aaaa, hh:mm:ss)
+NOMBRES_TIPO_MEDICION: [ (codigo: N, nombre: Text) ] = [ (11, "CO2"), (12, "Temperatura"), (13, "Ruido") ]
+FORMATO_FECHA: (day: Text, month: Text, year: Text, hour: Text, minute: Text, second: Text)
+             = ("2-digit", "2-digit", "numeric", "2-digit", "2-digit", "2-digit")   (fecha y hora local: dd/mm/aaaa, hh:mm:ss)
 
 botonActualizarPulsado()
 
@@ -57,7 +58,7 @@ mensaje: Text --> mostrarError()
 
 ## 2. Aclaraciones del diseño
 
-- **Nombres:** los campos de `Medicion` empiezan por mayúscula porque son las claves del JSON y las columnas de la tabla `Mediciones` (`database_design.md`). `NOMBRES_TIPO_MEDICION` y `FORMATO_FECHA` son constantes (mayúsculas, convención de JavaScript).
+- **Nombres:** los campos de `Medicion` empiezan por mayúscula porque son las claves del JSON y las columnas de la tabla `Mediciones` (`database_design.md`). `NOMBRES_TIPO_MEDICION` y `FORMATO_FECHA` son constantes (mayúsculas, convención de JavaScript). En el código, `NOMBRES_TIPO_MEDICION` es un objeto de JavaScript que se usa como tabla de búsqueda (código → nombre); en el diseño se dibuja como lista de pares `(codigo, nombre)`.
 - **Botón:** cuando el usuario lo pulsa, `botonActualizarPulsado()` llama a `recuperarUltimaMedicion()` de la lógica fake; si hay medición, llama a `mostrarMedicion()`; si es vacío, muestra el mensaje *"Todavía no hay mediciones"*; si hay error, llama a `mostrarError()` con su texto.
 - **mostrarMedicion():** escribe los cuatro datos en los párrafos del contenedor y oculta el mensaje de error. Para que el usuario los entienda, el `Timestamp` se muestra como fecha y hora local (ej. `06/10/2026, 11:52:54`) y el `TipoMedicion` con su nombre (`11` → `CO2`, `12` → `Temperatura`, `13` → `Ruido`); un tipo desconocido se muestra con su número. Los datos no cambian: solo cambia cómo se muestran.
 - **Varios sensores:** la página muestra la última medición de cualquier sensor; la fila `IdSensor` indica de qué sensor es.

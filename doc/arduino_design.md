@@ -290,6 +290,7 @@ p: [ N ], n: N --> alReves() --> [ N ]          (invierte el array)
 ## 2. Aclaraciones del diseño
 
 - **Nombres en mayúsculas:** `ID_SENSOR` y `RSSI` son constantes; en C++ las constantes se escriben en mayúsculas.
+- **Atributos públicos (Publicador):** `laEmisora` y `RSSI` son públicos en el código (el programa principal los usa directamente). Como la notación pone en el borde de la caja lo que es público, se dibujan ahí como si fueran un método de consulta sin parámetros: `tipo <-- nombre`. Los atributos privados (`ID_SENSOR`, `beaconUUID`) se dibujan dentro de la caja.
 - **operator BLEService() (ServicioEnEmisora):** es una conversión de tipo de C++ (`operator BLEService&()`): permite usar un `ServicioEnEmisora` donde Bluefruit espera un `BLEService` (por ejemplo en `anyadirServicio()`), y devuelve `elServicio`. En C++ su nombre es literalmente `operator BLEService`; el `&` (referencia) se quita según la notación.
 - **encenderEmisora() (2 versiones):** en el código hay dos `encenderEmisora()`: una sin parámetros y otra que además recibe los callbacks de conexión establecida y terminada. Como la notación omite los callbacks, las dos tienen el mismo diseño lógico y se dibujan una sola vez. Por la misma razón, `instalarCallbackConexionEstablecida()` e `instalarCallbackConexionTerminada()` se dibujan sin parámetros.
 - **Código proporcionado:** este componente es código del profesor (carpeta `Arduino-NoCambia`). Su lógica **no se modifica**; solo se añaden cabeceras de fichero y de función con el diseño lógico (rúbrica, "Buenas prácticas").
